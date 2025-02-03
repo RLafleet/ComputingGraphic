@@ -28,3 +28,57 @@ canvas {
     background-color: red;
     color: white;
 }
+
+/* Классическая тема (по умолчанию) */
+.classic {
+    background-color: white;
+    color: black;
+}
+
+/* Тёмная тема */
+.dark {
+    background-color: #6b3a3a;
+    color: white;
+}
+
+.dark canvas {
+    border-color: white;
+}
+
+.dark .letter {
+    border-color: white;
+    color: white;
+}
+
+.dark .letter.correct {
+    background-color: green;
+}
+
+.dark .letter.wrong {
+    background-color: red;
+}
+
+/* Мультяшная тема */
+.cartoon {
+    background-color: lightblue;
+    color: darkblue;
+}
+
+.cartoon canvas {
+    border: 4px dashed blue;
+}
+
+.cartoon .letter {
+    border: 2px solid blue;
+    background-color: yellow;
+    color: red;
+}
+
+.cartoon .letter.correct {
+    background-color: lime;
+}
+
+.cartoon .letter.wrong {
+    background-color: orange;
+}
+

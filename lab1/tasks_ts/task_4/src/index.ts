@@ -1,120 +1,175 @@
-window.onload = () => {
-    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    const ctx = canvas.getContext("2d")!;
-    const wordDisplay = document.getElementById("word-display")!;
-    const lettersContainer = document.getElementById("letters")!;
-    const hintElement = document.getElementById("hint")!;
-    const restartButton = document.getElementById("restart")! as HTMLButtonElement;
+class HangmanCanvas {
+    private ctx: CanvasRenderingContext2D;
+    private theme: string = "classic";
 
-    canvas.width = 300;
-    canvas.height = 400;
-
-    let words: { word: string; hint: string }[] = [];
-    let selectedWord = "";
-    let hint = "";
-    let guessedLetters: string[] = [];
-    let wrongGuesses = 0;
-    const maxMistakes = 7;
-
-    // Загрузка слов из JSON-файла
-    async function loadWords() {
-        const response = await fetch("words.json");
-        words = await response.json();
-        startGame();
+    constructor(private canvas: HTMLCanvasElement) {
+        this.ctx = canvas.getContext("2d")!;
+        this.canvas.width = 300;
+        this.canvas.height = 400;
     }
 
-    function startGame() {
-        const randomIndex = Math.floor(Math.random() * words.length);
-        selectedWord = words[randomIndex].word.toUpperCase();
-        hint = words[randomIndex].hint;
-
-        guessedLetters = [];
-        wrongGuesses = 0;
-        hintElement.textContent = `Подсказка: ${hint}`;
-
-        drawGallows();
-        updateWordDisplay();
-        generateLetters();
+    setTheme(theme: string) {
+        this.theme = theme;
+        this.drawGallows();
     }
 
-    function drawGallows() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 3;
-
-        // Основа
-        ctx.beginPath();
-        ctx.moveTo(50, 350);
-        ctx.lineTo(250, 350);
-        ctx.moveTo(100, 350);
-        ctx.lineTo(100, 50);
-        ctx.lineTo(200, 50);
-        ctx.lineTo(200, 80);
-        ctx.stroke();
-    }
-
-    function drawHangman() {
-        ctx.strokeStyle = "black";
-        switch (wrongGuesses) {
-            case 1: ctx.beginPath(); ctx.arc(200, 100, 20, 0, Math.PI * 2); ctx.stroke(); break; // Голова
-            case 2: ctx.moveTo(200, 120); ctx.lineTo(200, 200); ctx.stroke(); break; // Тело
-            case 3: ctx.moveTo(200, 140); ctx.lineTo(170, 180); ctx.stroke(); break; // Левая рука
-            case 4: ctx.moveTo(200, 140); ctx.lineTo(230, 180); ctx.stroke(); break; // Правая рука
-            case 5: ctx.moveTo(200, 200); ctx.lineTo(170, 250); ctx.stroke(); break; // Левая нога
-            case 6: ctx.moveTo(200, 200); ctx.lineTo(230, 250); ctx.stroke(); break; // Правая нога
-            case 7: alertGameOver(false); break; // Проигрыш
+    private getThemeColor(): string {
+        switch (this.theme) {
+            case "dark": return "white";
+            case "cartoon": return "blue";
+            default: return "black";
         }
     }
 
-    function updateWordDisplay() {
-        wordDisplay.innerHTML = selectedWord
+    drawGallows() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.strokeStyle = this.getThemeColor();
+        this.ctx.lineWidth = 3;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(50, 350);
+        this.ctx.lineTo(250, 350);
+        this.ctx.moveTo(100, 350);
+        this.ctx.lineTo(100, 50);
+        this.ctx.lineTo(200, 50);
+        this.ctx.lineTo(200, 80);
+        this.ctx.stroke();
+    }
+
+    drawHangman(stage: number) {
+        this.ctx.strokeStyle = this.getThemeColor();
+        switch (stage) {
+            case 1: this.ctx.beginPath(); this.ctx.arc(200, 100, 20, 0, Math.PI * 2); this.ctx.stroke(); break;
+            case 2: this.ctx.moveTo(200, 120); this.ctx.lineTo(200, 200); this.ctx.stroke(); break;
+            case 3: this.ctx.moveTo(200, 140); this.ctx.lineTo(170, 180); this.ctx.stroke(); break;
+            case 4: this.ctx.moveTo(200, 140); this.ctx.lineTo(230, 180); this.ctx.stroke(); break;
+            case 5: this.ctx.moveTo(200, 200); this.ctx.lineTo(170, 250); this.ctx.stroke(); break;
+            case 6: this.ctx.moveTo(200, 200); this.ctx.lineTo(230, 250); this.ctx.stroke(); break;
+        }
+    }
+}
+
+class WordManager {
+    private words: { word: string; hint: string }[] = [];
+
+    async loadWords() {
+        const response = await fetch("words.json");
+        this.words = await response.json();
+    }
+
+    getRandomWord(): { word: string; hint: string } {
+        const randomIndex = Math.floor(Math.random() * this.words.length);
+        return this.words[randomIndex];
+    }
+}
+
+class HangmanGame {
+    private selectedWord: string = "";
+    private hint: string = "";
+    private guessedLetters: string[] = [];
+    private wrongGuesses: number = 0;
+    private maxMistakes: number = 7;
+
+    constructor(
+        private wordDisplay: HTMLElement,
+        private lettersContainer: HTMLElement,
+        private hintElement: HTMLElement,
+        private restartButton: HTMLButtonElement,
+        private canvas: HangmanCanvas,
+        private wordManager: WordManager
+    ) {
+        this.restartButton.addEventListener("click", () => this.startGame());
+    }
+
+    async startGame() {
+        const wordData = this.wordManager.getRandomWord();
+        this.selectedWord = wordData.word.toUpperCase();
+        this.hint = wordData.hint;
+        this.guessedLetters = [];
+        this.wrongGuesses = 0;
+        this.hintElement.textContent = `Подсказка: ${this.hint}`;
+
+        this.canvas.drawGallows();
+        this.updateWordDisplay();
+        this.generateLetters();
+        this.restartButton.style.display = "none";
+    }
+
+    private updateWordDisplay() {
+        this.wordDisplay.innerHTML = this.selectedWord
             .split("")
-            .map(letter => guessedLetters.includes(letter) ? letter : "_")
+            .map(letter => this.guessedLetters.includes(letter) ? letter : "_")
             .join(" ");
 
-        if (!wordDisplay.innerText.includes("_")) {
-            alertGameOver(true);
+        if (!this.wordDisplay.innerText.includes("_")) {
+            this.alertGameOver(true);
         }
     }
 
-    function generateLetters() {
-        lettersContainer.innerHTML = "";
-        const alphabet = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯ";
+    private generateLetters() {
+        this.lettersContainer.innerHTML = "";
+        const alphabet = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
         for (let letter of alphabet) {
             const btn = document.createElement("span");
             btn.classList.add("letter");
             btn.textContent = letter;
-            btn.addEventListener("click", () => handleLetterClick(letter, btn));
-            lettersContainer.appendChild(btn);
+            btn.addEventListener("click", () => this.handleLetterClick(letter, btn));
+            this.lettersContainer.appendChild(btn);
         }
     }
 
-    function handleLetterClick(letter: string, btn: HTMLSpanElement) {
-        if (guessedLetters.includes(letter) || wrongGuesses >= maxMistakes) return;
+    private handleLetterClick(letter: string, btn: HTMLSpanElement) {
+        if (this.guessedLetters.includes(letter) || this.wrongGuesses >= this.maxMistakes) return;
 
-        if (selectedWord.includes(letter)) {
-            guessedLetters.push(letter);
+        if (this.selectedWord.includes(letter)) {
+            this.guessedLetters.push(letter);
             btn.classList.add("correct");
         } else {
-            wrongGuesses++;
+            this.wrongGuesses++;
             btn.classList.add("wrong");
-            drawHangman();
+            this.canvas.drawHangman(this.wrongGuesses);
         }
 
-        updateWordDisplay();
+        this.updateWordDisplay();
     }
 
-    function alertGameOver(won: boolean) {
+    private alertGameOver(won: boolean) {
         setTimeout(() => {
-            alert(won ? "Поздравляем! Вы угадали слово!" : `Вы проиграли! Загаданное слово: ${selectedWord}`);
-            restartButton.style.display = "block";
+            alert(won ? "Поздравляем! Вы угадали слово!" : `Вы проиграли! Загаданное слово: ${this.selectedWord}`);
+            this.restartButton.style.display = "block";
         }, 500);
     }
+}
 
-    restartButton.addEventListener("click", () => {
-        restartButton.style.display = "none";
-        startGame();
-    });
+class ThemeManager {
+    constructor(private themeSelector: HTMLSelectElement, private canvas: HangmanCanvas) {
+        this.themeSelector.addEventListener("change", (e) => {
+            const target = e.target as HTMLSelectElement;
+            this.applyTheme(target.value);
+        });
+    }
 
-    loadWords();
+    private applyTheme(theme: string) {
+        document.body.classList.remove("classic", "dark", "cartoon");
+        document.body.classList.add(theme);
+        this.canvas.setTheme(theme);
+    }
+}
+
+window.onload = async () => {
+    const canvasElement = document.getElementById("canvas") as HTMLCanvasElement;
+    const wordDisplay = document.getElementById("word-display")!;
+    const lettersContainer = document.getElementById("letters")!;
+    const hintElement = document.getElementById("hint")!;
+    const restartButton = document.getElementById("restart")! as HTMLButtonElement;
+    const themeSelector = document.getElementById("theme") as HTMLSelectElement;
+
+    const canvas = new HangmanCanvas(canvasElement);
+    const wordManager = new WordManager();
+    await wordManager.loadWords();
+
+    const game = new HangmanGame(wordDisplay, lettersContainer, hintElement, restartButton, canvas, wordManager);
+    const themeManager = new ThemeManager(themeSelector, canvas);
+
+    game.startGame();
 };

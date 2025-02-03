@@ -34,149 +34,224 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-window.onload = function () {
-    var canvas = document.getElementById("canvas");
-    var ctx = canvas.getContext("2d");
-    var wordDisplay = document.getElementById("word-display");
-    var lettersContainer = document.getElementById("letters");
-    var hintElement = document.getElementById("hint");
-    var restartButton = document.getElementById("restart");
-    canvas.width = 300;
-    canvas.height = 400;
-    var words = [];
-    var selectedWord = "";
-    var hint = "";
-    var guessedLetters = [];
-    var wrongGuesses = 0;
-    var maxMistakes = 7;
-    // Загрузка слов из JSON-файла
-    function loadWords() {
+var _this = this;
+var HangmanCanvas = /** @class */ (function () {
+    function HangmanCanvas(canvas) {
+        this.canvas = canvas;
+        this.theme = "classic";
+        this.ctx = canvas.getContext("2d");
+        this.canvas.width = 300;
+        this.canvas.height = 400;
+    }
+    HangmanCanvas.prototype.setTheme = function (theme) {
+        this.theme = theme;
+        this.drawGallows();
+    };
+    HangmanCanvas.prototype.getThemeColor = function () {
+        switch (this.theme) {
+            case "dark": return "white";
+            case "cartoon": return "blue";
+            default: return "black";
+        }
+    };
+    HangmanCanvas.prototype.drawGallows = function () {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.strokeStyle = this.getThemeColor();
+        this.ctx.lineWidth = 3;
+        this.ctx.beginPath();
+        this.ctx.moveTo(50, 350);
+        this.ctx.lineTo(250, 350);
+        this.ctx.moveTo(100, 350);
+        this.ctx.lineTo(100, 50);
+        this.ctx.lineTo(200, 50);
+        this.ctx.lineTo(200, 80);
+        this.ctx.stroke();
+    };
+    HangmanCanvas.prototype.drawHangman = function (stage) {
+        this.ctx.strokeStyle = this.getThemeColor();
+        switch (stage) {
+            case 1:
+                this.ctx.beginPath();
+                this.ctx.arc(200, 100, 20, 0, Math.PI * 2);
+                this.ctx.stroke();
+                break;
+            case 2:
+                this.ctx.moveTo(200, 120);
+                this.ctx.lineTo(200, 200);
+                this.ctx.stroke();
+                break;
+            case 3:
+                this.ctx.moveTo(200, 140);
+                this.ctx.lineTo(170, 180);
+                this.ctx.stroke();
+                break;
+            case 4:
+                this.ctx.moveTo(200, 140);
+                this.ctx.lineTo(230, 180);
+                this.ctx.stroke();
+                break;
+            case 5:
+                this.ctx.moveTo(200, 200);
+                this.ctx.lineTo(170, 250);
+                this.ctx.stroke();
+                break;
+            case 6:
+                this.ctx.moveTo(200, 200);
+                this.ctx.lineTo(230, 250);
+                this.ctx.stroke();
+                break;
+        }
+    };
+    return HangmanCanvas;
+}());
+var WordManager = /** @class */ (function () {
+    function WordManager() {
+        this.words = [];
+    }
+    WordManager.prototype.loadWords = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var response;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
+            var response, _a;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
                     case 0: return [4 /*yield*/, fetch("words.json")];
                     case 1:
-                        response = _a.sent();
+                        response = _b.sent();
+                        _a = this;
                         return [4 /*yield*/, response.json()];
                     case 2:
-                        words = _a.sent();
-                        startGame();
+                        _a.words = _b.sent();
                         return [2 /*return*/];
                 }
             });
         });
+    };
+    WordManager.prototype.getRandomWord = function () {
+        var randomIndex = Math.floor(Math.random() * this.words.length);
+        return this.words[randomIndex];
+    };
+    return WordManager;
+}());
+var HangmanGame = /** @class */ (function () {
+    function HangmanGame(wordDisplay, lettersContainer, hintElement, restartButton, canvas, wordManager) {
+        var _this = this;
+        this.wordDisplay = wordDisplay;
+        this.lettersContainer = lettersContainer;
+        this.hintElement = hintElement;
+        this.restartButton = restartButton;
+        this.canvas = canvas;
+        this.wordManager = wordManager;
+        this.selectedWord = "";
+        this.hint = "";
+        this.guessedLetters = [];
+        this.wrongGuesses = 0;
+        this.maxMistakes = 7;
+        this.restartButton.addEventListener("click", function () { return _this.startGame(); });
     }
-    function startGame() {
-        var randomIndex = Math.floor(Math.random() * words.length);
-        selectedWord = words[randomIndex].word.toUpperCase();
-        hint = words[randomIndex].hint;
-        guessedLetters = [];
-        wrongGuesses = 0;
-        hintElement.textContent = "\u041F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430: ".concat(hint);
-        drawGallows();
-        updateWordDisplay();
-        generateLetters();
-    }
-    function drawGallows() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 3;
-        // Основа
-        ctx.beginPath();
-        ctx.moveTo(50, 350);
-        ctx.lineTo(250, 350);
-        ctx.moveTo(100, 350);
-        ctx.lineTo(100, 50);
-        ctx.lineTo(200, 50);
-        ctx.lineTo(200, 80);
-        ctx.stroke();
-    }
-    function drawHangman() {
-        ctx.strokeStyle = "black";
-        switch (wrongGuesses) {
-            case 1:
-                ctx.beginPath();
-                ctx.arc(200, 100, 20, 0, Math.PI * 2);
-                ctx.stroke();
-                break; // Голова
-            case 2:
-                ctx.moveTo(200, 120);
-                ctx.lineTo(200, 200);
-                ctx.stroke();
-                break; // Тело
-            case 3:
-                ctx.moveTo(200, 140);
-                ctx.lineTo(170, 180);
-                ctx.stroke();
-                break; // Левая рука
-            case 4:
-                ctx.moveTo(200, 140);
-                ctx.lineTo(230, 180);
-                ctx.stroke();
-                break; // Правая рука
-            case 5:
-                ctx.moveTo(200, 200);
-                ctx.lineTo(170, 250);
-                ctx.stroke();
-                break; // Левая нога
-            case 6:
-                ctx.moveTo(200, 200);
-                ctx.lineTo(230, 250);
-                ctx.stroke();
-                break; // Правая нога
-            case 7:
-                alertGameOver(false);
-                break; // Проигрыш
-        }
-    }
-    function updateWordDisplay() {
-        wordDisplay.innerHTML = selectedWord
+    HangmanGame.prototype.startGame = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var wordData;
+            return __generator(this, function (_a) {
+                wordData = this.wordManager.getRandomWord();
+                this.selectedWord = wordData.word.toUpperCase();
+                this.hint = wordData.hint;
+                this.guessedLetters = [];
+                this.wrongGuesses = 0;
+                this.hintElement.textContent = "\u041F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430: ".concat(this.hint);
+                this.canvas.drawGallows();
+                this.updateWordDisplay();
+                this.generateLetters();
+                this.restartButton.style.display = "none";
+                return [2 /*return*/];
+            });
+        });
+    };
+    HangmanGame.prototype.updateWordDisplay = function () {
+        var _this = this;
+        this.wordDisplay.innerHTML = this.selectedWord
             .split("")
-            .map(function (letter) { return guessedLetters.includes(letter) ? letter : "_"; })
+            .map(function (letter) { return _this.guessedLetters.includes(letter) ? letter : "_"; })
             .join(" ");
-        if (!wordDisplay.innerText.includes("_")) {
-            alertGameOver(true);
+        if (!this.wordDisplay.innerText.includes("_")) {
+            this.alertGameOver(true);
         }
-    }
-    function generateLetters() {
-        lettersContainer.innerHTML = "";
-        var alphabet = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯ";
+    };
+    HangmanGame.prototype.generateLetters = function () {
+        var _this = this;
+        this.lettersContainer.innerHTML = "";
+        var alphabet = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
         var _loop_1 = function (letter) {
             var btn = document.createElement("span");
             btn.classList.add("letter");
             btn.textContent = letter;
-            btn.addEventListener("click", function () { return handleLetterClick(letter, btn); });
-            lettersContainer.appendChild(btn);
+            btn.addEventListener("click", function () { return _this.handleLetterClick(letter, btn); });
+            this_1.lettersContainer.appendChild(btn);
         };
+        var this_1 = this;
         for (var _i = 0, alphabet_1 = alphabet; _i < alphabet_1.length; _i++) {
             var letter = alphabet_1[_i];
             _loop_1(letter);
         }
-    }
-    function handleLetterClick(letter, btn) {
-        if (guessedLetters.includes(letter) || wrongGuesses >= maxMistakes)
+    };
+    HangmanGame.prototype.handleLetterClick = function (letter, btn) {
+        if (this.guessedLetters.includes(letter) || this.wrongGuesses >= this.maxMistakes)
             return;
-        if (selectedWord.includes(letter)) {
-            guessedLetters.push(letter);
+        if (this.selectedWord.includes(letter)) {
+            this.guessedLetters.push(letter);
             btn.classList.add("correct");
         }
         else {
-            wrongGuesses++;
+            this.wrongGuesses++;
             btn.classList.add("wrong");
-            drawHangman();
+            this.canvas.drawHangman(this.wrongGuesses);
         }
-        updateWordDisplay();
-    }
-    function alertGameOver(won) {
+        this.updateWordDisplay();
+    };
+    HangmanGame.prototype.alertGameOver = function (won) {
+        var _this = this;
         setTimeout(function () {
-            alert(won ? "Поздравляем! Вы угадали слово!" : "\u0412\u044B \u043F\u0440\u043E\u0438\u0433\u0440\u0430\u043B\u0438! \u0417\u0430\u0433\u0430\u0434\u0430\u043D\u043D\u043E\u0435 \u0441\u043B\u043E\u0432\u043E: ".concat(selectedWord));
-            restartButton.style.display = "block";
+            alert(won ? "Поздравляем! Вы угадали слово!" : "\u0412\u044B \u043F\u0440\u043E\u0438\u0433\u0440\u0430\u043B\u0438! \u0417\u0430\u0433\u0430\u0434\u0430\u043D\u043D\u043E\u0435 \u0441\u043B\u043E\u0432\u043E: ".concat(_this.selectedWord));
+            _this.restartButton.style.display = "block";
         }, 500);
+    };
+    return HangmanGame;
+}());
+var ThemeManager = /** @class */ (function () {
+    function ThemeManager(themeSelector, canvas) {
+        var _this = this;
+        this.themeSelector = themeSelector;
+        this.canvas = canvas;
+        this.themeSelector.addEventListener("change", function (e) {
+            var target = e.target;
+            _this.applyTheme(target.value);
+        });
     }
-    restartButton.addEventListener("click", function () {
-        restartButton.style.display = "none";
-        startGame();
+    ThemeManager.prototype.applyTheme = function (theme) {
+        document.body.classList.remove("classic", "dark", "cartoon");
+        document.body.classList.add(theme);
+        this.canvas.setTheme(theme);
+    };
+    return ThemeManager;
+}());
+window.onload = function () { return __awaiter(_this, void 0, void 0, function () {
+    var canvasElement, wordDisplay, lettersContainer, hintElement, restartButton, themeSelector, canvas, wordManager, game, themeManager;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                canvasElement = document.getElementById("canvas");
+                wordDisplay = document.getElementById("word-display");
+                lettersContainer = document.getElementById("letters");
+                hintElement = document.getElementById("hint");
+                restartButton = document.getElementById("restart");
+                themeSelector = document.getElementById("theme");
+                canvas = new HangmanCanvas(canvasElement);
+                wordManager = new WordManager();
+                return [4 /*yield*/, wordManager.loadWords()];
+            case 1:
+                _a.sent();
+                game = new HangmanGame(wordDisplay, lettersContainer, hintElement, restartButton, canvas, wordManager);
+                themeManager = new ThemeManager(themeSelector, canvas);
+                game.startGame();
+                return [2 /*return*/];
+        }
     });
-    loadWords();
-};
+}); };
