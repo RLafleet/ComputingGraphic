@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "module": "CommonJS"
+  },
+  "scripts": {
+    "build": "tsc",
+  },
+  "execMap": {
+    "ts": "ts-node"
+  },
+  "rootDir": "./src",
+  "outDir": "./dist",
+}

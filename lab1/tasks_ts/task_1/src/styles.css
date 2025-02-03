@@ -1,0 +1,25 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+}
+
+.initials {
+    font-size: 100px;
+    font-weight: bold;
+    transition: transform 0.2s ease-in-out;
+}
+
+.letter1 {
+    fill: red;
+}
+
+.letter2 {
+    fill: green;
+}
+
+.letter3 {
+    fill: blue;
+}

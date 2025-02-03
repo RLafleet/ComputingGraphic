@@ -1,0 +1,30 @@
+body {
+    text-align: center;
+    font-family: Arial, sans-serif;
+}
+canvas {
+    border: 2px solid black;
+    display: block;
+    margin: 20px auto;
+}
+#letters {
+    margin-top: 20px;
+}
+.letter {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    margin: 5px;
+    border: 1px solid black;
+    cursor: pointer;
+    font-weight: bold;
+}
+.letter.correct {
+    background-color: green;
+    color: white;
+}
+.letter.wrong {
+    background-color: red;
+    color: white;
+}

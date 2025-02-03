@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "commonjs",
+  },
+  "scripts": {
+    "build": "tsc",
+  },
+  "execMap": {
+    "ts": "ts-node"
+  },
+  "rootDir": "./src",
+  "outDir": "./dist",
+}
