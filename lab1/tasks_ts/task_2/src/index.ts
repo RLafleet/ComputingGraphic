@@ -31,8 +31,6 @@ class CanvasApp {
             const bounds = this.house.getBounds();
             if (mouseX >= bounds.left && mouseX <= bounds.right && mouseY >= bounds.top && mouseY <= bounds.bottom) {
                 this.isDragging = true;
-
-                // Исправление: смещение вычисляется относительно фактического клика
                 this.offsetX = mouseX - this.house.getX();
                 this.offsetY = mouseY - this.house.getY();
             }
@@ -72,11 +70,9 @@ class House {
     public draw() {
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
-        // Дом
         this.ctx.fillStyle = "saddlebrown";
         this.ctx.fillRect(this.x, this.y, this.width, this.height);
 
-        // Крыша
         this.ctx.fillStyle = "darkred";
         this.ctx.beginPath();
         this.ctx.moveTo(this.x - 10, this.y);
@@ -85,16 +81,13 @@ class House {
         this.ctx.closePath();
         this.ctx.fill();
 
-        // Дверь
         this.ctx.fillStyle = "peru";
         this.ctx.fillRect(this.x + 60, this.y + 50, 30, 50);
 
-        // Окна
         this.ctx.fillStyle = "lightblue";
         this.ctx.fillRect(this.x + 15, this.y + 25, 30, 30);
         this.ctx.fillRect(this.x + 105, this.y + 25, 30, 30);
 
-        // Забор
         this.ctx.strokeStyle = "sienna";
         this.ctx.lineWidth = 4;
         for (let i = -10; i < this.width + 20; i += 20) {

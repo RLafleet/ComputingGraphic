@@ -16,7 +16,8 @@ function jump(letter, delay) {
     setTimeout(() => {
         let positionY = 0;
 
-        // учитывать сколько реально времени прошло. привязать смещение между анимациями к предыдущему
+        // учитывать сколько реально времени прошло.
+        // привязать смещение между анимациями к предыдущему
         // равноускоренное
         const interval = setInterval(() => {
             positionY += POSITION_INCREMENT_JUMP;

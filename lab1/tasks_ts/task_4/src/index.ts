@@ -18,7 +18,14 @@ window.onload = () => {
     const maxMistakes = 7;
     let theme = "classic";
 
-    // Загрузка слов из JSON-файла
+    function getThemeColor(): string {
+        switch (theme) {
+            case "dark": return "white";
+            case "cartoon": return "blue";
+            default: return "black";
+        }
+    }
+
     async function loadWords() {
         const response = await fetch("words.json");
         words = await response.json();
@@ -41,7 +48,7 @@ window.onload = () => {
 
     function drawGallows() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = getThemeColor(); // Меняем цвет в зависимости от темы
+        ctx.strokeStyle = getThemeColor();
         ctx.lineWidth = 3;
 
         ctx.beginPath();
@@ -55,26 +62,49 @@ window.onload = () => {
     }
 
     function drawHangman() {
-        ctx.strokeStyle = getThemeColor(); // Меняем цвет в зависимости от темы
+        ctx.strokeStyle = getThemeColor();
+        const drawSteps = [
+            function() {
+                ctx.beginPath();
+                ctx.arc(200, 100, 20, 0, Math.PI * 2);
+                ctx.stroke();
+            },
+            function() {
+                ctx.moveTo(200, 120);
+                ctx.lineTo(200, 200);
+                ctx.stroke();
+            },
+            function() {
+                ctx.moveTo(200, 140);
+                ctx.lineTo(170, 180);
+                ctx.stroke();
+            },
+            function() {
+                ctx.moveTo(200, 140);
+                ctx.lineTo(230, 180);
+                ctx.stroke();
+            },
+            function() {
+                ctx.moveTo(200, 200);
+                ctx.lineTo(170, 250);
+                ctx.stroke();
+            },
+            function() {
+                ctx.moveTo(200, 200);
+                ctx.lineTo(230, 250);
+                ctx.stroke();
+            }
+        ];
 
-        switch (wrongGuesses) {
-            case 1: ctx.beginPath(); ctx.arc(200, 100, 20, 0, Math.PI * 2); ctx.stroke(); break; // Голова
-            case 2: ctx.moveTo(200, 120); ctx.lineTo(200, 200); ctx.stroke(); break; // Тело
-            case 3: ctx.moveTo(200, 140); ctx.lineTo(170, 180); ctx.stroke(); break; // Левая рука
-            case 4: ctx.moveTo(200, 140); ctx.lineTo(230, 180); ctx.stroke(); break; // Правая рука
-            case 5: ctx.moveTo(200, 200); ctx.lineTo(170, 250); ctx.stroke(); break; // Левая нога
-            case 6: ctx.moveTo(200, 200); ctx.lineTo(230, 250); ctx.stroke(); break; // Правая нога
-            case 7: alertGameOver(false); break; // Проигрыш
+        for (let i = 0; i < wrongGuesses && i < drawSteps.length; i++) {
+            drawSteps[i]();
+        }
+
+        if (wrongGuesses >= drawSteps.length) {
+            alertGameOver(false);
         }
     }
 
-    function getThemeColor(): string {
-        switch (theme) {
-            case "dark": return "white"; // Для тёмной темы
-            case "cartoon": return "blue"; // Для мультяшной темы
-            default: return "black"; // Для классической темы
-        }
-    }
 
     function updateWordDisplay() {
         wordDisplay.innerHTML = selectedWord
@@ -135,15 +165,11 @@ window.onload = () => {
         const target = e.target as HTMLSelectElement;
         theme = target.value;
 
-        // Удаляем все предыдущие классы тем
         document.body.classList.remove("classic", "dark", "cartoon");
-
-        // Добавляем новую тему
         document.body.classList.add(theme);
-
         drawGallows();
         drawHangman();
     });
 
-    loadWords();
+    loadWords().then(r => {});
 };
