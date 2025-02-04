@@ -146,7 +146,7 @@ window.onload = () => {
 
     function alertGameOver(won: boolean) {
         setTimeout(() => {
-            alert(won ? "Поздравляем! Вы угадали слово!" : `Вы проиграли! Загаданное слово: ${selectedWord}`);
+            alert(won ? "Вы выйграли, вы молодец :)" : `Вы проиграли! Слово: ${selectedWord}`);
             restartButton.style.display = "block";
         }, 500);
     }
