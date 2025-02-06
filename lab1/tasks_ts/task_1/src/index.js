@@ -15,7 +15,7 @@ class JumpingLetter {
         this.startTime = null;
     }
 
-    draw(ctx, currentTime) {
+    Draw(ctx, currentTime) {
         if (this.startTime === null) {
             this.startTime = currentTime;
         }
@@ -39,16 +39,16 @@ window.onload = function() {
         new JumpingLetter('C', 190, 'blue', 400)
     ];
 
-    function animate() {
+    function Animate() {
         const currentTime = Date.now();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         letters.forEach(letter => {
-            letter.draw(ctx, currentTime);
+            letter.Draw(ctx, currentTime);
         });
 
-        requestAnimationFrame(animate);
+        requestAnimationFrame(Animate);
     }
 
-    animate();
+    Animate();
 }
