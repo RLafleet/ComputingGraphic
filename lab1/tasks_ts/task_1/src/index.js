@@ -28,22 +28,26 @@ class JumpingLetter {
         ctx.strokeStyle = this.color;
         ctx.lineWidth = 2;
         switch (this.initial) {
-            case 'A':
+            case 'H':
                 ctx.moveTo(this.x, y);
-                ctx.lineTo(this.x + 15, y - 30);
-                ctx.lineTo(this.x + 30, y);
-                ctx.moveTo(this.x + 5, y - 10);
-                ctx.lineTo(this.x + 25, y - 10);
+                ctx.lineTo(this.x, y - 30);
+                ctx.moveTo(this.x, y - 15);
+                ctx.lineTo(this.x + 30, y - 15);
+                ctx.moveTo(this.x + 30, y);
+                ctx.lineTo(this.x + 30, y - 30);
                 break;
-            case 'B':
-                ctx.moveTo(this.x, y - 30);
-                ctx.lineTo(this.x, y);
-                ctx.moveTo(this.x, y - 30);
+            case 'M':
+                ctx.moveTo(this.x, y);
+                ctx.lineTo(this.x, y - 30);
+                ctx.lineTo(this.x + 15, y - 15);
+                ctx.lineTo(this.x + 30, y - 30);
+                ctx.lineTo(this.x + 30, y);
+                break;
+            case 'D':
+                ctx.moveTo(this.x, y);
+                ctx.lineTo(this.x, y - 30);
                 ctx.quadraticCurveTo(this.x + 30, y - 30, this.x + 30, y - 15);
                 ctx.quadraticCurveTo(this.x + 30, y, this.x, y);
-                break;
-            case 'C':
-                ctx.arc(this.x + 15, y - 15, 15, Math.PI * 0.5, Math.PI * 1.5);
                 break;
             default:
                 console.warn(`Letter "${this.initial}" not defined`);
@@ -58,9 +62,9 @@ window.onload = function() {
     const ctx = canvas.getContext('2d');
 
     const letters = [
-        new JumpingLetter('A', 50, 'red', 0),
-        new JumpingLetter('B', 120, 'green', 200),
-        new JumpingLetter('C', 190, 'blue', 400)
+        new JumpingLetter('H', 50, 'red', 0),
+        new JumpingLetter('M', 120, 'green', 200),
+        new JumpingLetter('D', 190, 'blue', 400)
     ];
 
     function Animate() {
