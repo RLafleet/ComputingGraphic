@@ -1,7 +1,15 @@
 ﻿#include <SDL.h>
 #include <iostream>
 
-void PutPixel(SDL_Renderer* renderer, int x, int y, int screenWidth, int screenHeight, SDL_Color color)
+void PutPixel
+(
+    SDL_Renderer* renderer, 
+    int x, 
+    int y, 
+    int screenWidth, 
+    int screenHeight, 
+    SDL_Color color
+) 
 {
     if (x >= 0 && x < screenWidth && y >= 0 && y < screenHeight) 
     {
@@ -10,7 +18,16 @@ void PutPixel(SDL_Renderer* renderer, int x, int y, int screenWidth, int screenH
     }
 }
 
-void DrawCircle(SDL_Renderer* renderer, int centerX, int centerY, int radius, int screenWidth, int screenHeight, SDL_Color color)
+void DrawCircle
+(
+    SDL_Renderer* renderer, 
+    int centerX, 
+    int centerY, 
+    int radius, 
+    int screenWidth, 
+    int screenHeight, 
+    SDL_Color color
+) 
 {
     int x = radius;
     int y = 0;
@@ -51,7 +68,7 @@ void FillCircleSquare(SDL_Renderer* renderer, int centerX, int centerY, int radi
     {
         for (int cY = cY_start; cY <= cY_end; ++cY) 
         {
-            if ((cX - centerX) * (cX - centerX) + (cY - centerY) * (cY - centerY) <= radius * radius)
+            if ((cX - centerX) * (cX - centerX) + (cY - centerY) * (cY - centerY) <= radius * radius) 
             {
                 PutPixel(renderer, cX, cY, screenWidth, screenHeight, fillColor);
             }
@@ -61,7 +78,7 @@ void FillCircleSquare(SDL_Renderer* renderer, int centerX, int centerY, int radi
 
 int main(int argc, char* argv[]) 
 {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) 
     {
         std::cout << "SDL initialization failed: " << SDL_GetError() << std::endl;
         return 1;
@@ -91,14 +108,14 @@ int main(int argc, char* argv[])
     int centerX = screenWidth / 2;
     int centerY = screenHeight / 2;
     int radius = 100;
-    SDL_Color outlineColor = { 255, 255, 255, 255 };
-    SDL_Color fillColor = { 0, 255, 0, 255 };
+    SDL_Color outlineColor = { 255, 255, 255, 255 }; 
+    SDL_Color fillColor = { 0, 255, 0, 255 };     
 
-    while (!quit)
+    while (!quit) 
     {
-        while (SDL_PollEvent(&event) != 0)
+        while (SDL_PollEvent(&event) != 0) 
         {
-            if (event.type == SDL_QUIT)
+            if (event.type == SDL_QUIT) 
             {
                 quit = true;
             }
