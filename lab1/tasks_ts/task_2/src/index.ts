@@ -18,7 +18,7 @@ class CanvasApp {
         const initialY = 150;
         this.house = new House(this.ctx, initialX, initialY);
 
-        this.house.Draw();
+        this.house.draw();
         this.addEventListeners();
     }
 
@@ -28,11 +28,11 @@ class CanvasApp {
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
 
-            const bounds = this.house.GetBounds();
+            const bounds = this.house.getBounds();
             if (mouseX >= bounds.left && mouseX <= bounds.right && mouseY >= bounds.top && mouseY <= bounds.bottom) {
                 this.isDragging = true;
-                this.offsetX = mouseX - this.house.GetX();
-                this.offsetY = mouseY - this.house.GetY();
+                this.offsetX = mouseX - this.house.getX();
+                this.offsetY = mouseY - this.house.getY();
             }
         });
 
@@ -41,8 +41,8 @@ class CanvasApp {
                 const rect = this.canvas.getBoundingClientRect();
                 const newX = e.clientX - rect.left - this.offsetX;
                 const newY = e.clientY - rect.top - this.offsetY;
-                this.house.SetPosition(newX, newY);
-                this.house.Draw();
+                this.house.setPosition(newX, newY);
+                this.house.draw();
             }
         });
 
@@ -67,7 +67,7 @@ class House {
         this.y = y;
     }
 
-    public Draw() {
+    public draw() {
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
         this.ctx.fillStyle = "saddlebrown";
@@ -103,12 +103,12 @@ class House {
         this.ctx.stroke();
     }
 
-    public SetPosition(x: number, y: number) {
+    public setPosition(x: number, y: number) {
         this.x = x;
         this.y = y;
     }
 
-    public GetBounds() {
+    public getBounds() {
         return {
             left: this.x - 10,
             right: this.x + this.width + 10,
@@ -117,11 +117,11 @@ class House {
         };
     }
 
-    public GetX() {
+    public getX() {
         return this.x;
     }
 
-    public GetY() {
+    public getY() {
         return this.y;
     }
 }

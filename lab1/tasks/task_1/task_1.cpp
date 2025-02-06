@@ -35,14 +35,7 @@ void DrawCircle
 
     while (x >= y) 
     {
-        PutPixel(renderer, x + centerX, y + centerY, screenWidth, screenHeight, color);
-        PutPixel(renderer, y + centerX, x + centerY, screenWidth, screenHeight, color);
-        PutPixel(renderer, -x + centerX, y + centerY, screenWidth, screenHeight, color);
-        PutPixel(renderer, -y + centerX, x + centerY, screenWidth, screenHeight, color);
-        PutPixel(renderer, -x + centerX, -y + centerY, screenWidth, screenHeight, color);
-        PutPixel(renderer, -y + centerX, -x + centerY, screenWidth, screenHeight, color);
-        PutPixel(renderer, x + centerX, -y + centerY, screenWidth, screenHeight, color);
-        PutPixel(renderer, y + centerX, -x + centerY, screenWidth, screenHeight, color);
+   
         y++;
 
         if (decisionOver2 <= 0) 
@@ -64,6 +57,7 @@ void FillCircleSquare(SDL_Renderer* renderer, int centerX, int centerY, int radi
     int cY_start = centerY - radius;
     int cY_end = centerY + radius;
 
+    // Алгоритм Брезенхема
     for (int cX = cX_start; cX <= cX_end; ++cX) 
     {
         for (int cY = cY_start; cY <= cY_end; ++cY) 
@@ -115,7 +109,7 @@ int main(int argc, char* argv[])
     bool quit = false;
     int centerX = screenWidth / 2;
     int centerY = screenHeight / 2;
-    int radius = 100;
+    int radius = 4;
     SDL_Color outlineColor = { 255, 255, 255, 255 }; 
     SDL_Color fillColor = { 0, 255, 0, 255 };     
 

@@ -14,13 +14,14 @@ class JumpingLetter {
         this.startTime = null;
     }
 
-    Draw(ctx, currentTime) {
+    draw(ctx, currentTime) {
         if (this.startTime === null) {
             this.startTime = currentTime;
         }
         const time = (currentTime - this.startTime + this.phase) % this.animationDuration;
         const jumpProgress = Math.sin(time / this.animationDuration * Math.PI);
         const y = this.initialY - jumpProgress * this.jumpHeight;
+        // ВРЕМЯ С предыдущего кадра
 
         ctx.fillStyle = this.color;
 
@@ -67,16 +68,16 @@ window.onload = function() {
         new JumpingLetter('D', 190, 'blue', 400)
     ];
 
-    function Animate() {
+    function animate() {
         const currentTime = Date.now();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         letters.forEach(letter => {
-            letter.Draw(ctx, currentTime);
+            letter.draw(ctx, currentTime);
         });
 
-        requestAnimationFrame(Animate);
+        requestAnimationFrame(animate);
     }
 
-    Animate();
+    animate();
 }

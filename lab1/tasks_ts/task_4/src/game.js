@@ -2,10 +2,10 @@ class GameModel {
     constructor(words, maxMistakes = 7) {
         this.words = words;
         this.maxMistakes = maxMistakes;
-        this.ResetGame();
+        this.resetGame();
     }
 
-    ResetGame() {
+    resetGame() {
         const randomIndex = Math.floor(Math.random() * this.words.length);
         this.selectedWord = this.words[randomIndex].word.toUpperCase();
         this.hint = this.words[randomIndex].hint;
@@ -13,7 +13,8 @@ class GameModel {
         this.wrongGuesses = 0;
     }
 
-    GuessLetter(letter) {
+    // как узнать какие буквы были использованы.
+    guessLetter(letter) {
         if (this.guessedLetters.includes(letter) || this.wrongGuesses >= this.maxMistakes) {
             return false;
         }
@@ -27,11 +28,11 @@ class GameModel {
         }
     }
 
-    IsGameOver() {
-        return this.wrongGuesses >= this.maxMistakes || this.IsGameWon();
+    isGameOver() {
+        return this.wrongGuesses >= this.maxMistakes || this.isGameWon();
     }
 
-    IsGameWon() {
+    isGameWon() {
         return this.selectedWord.split('').every(letter => this.guessedLetters.includes(letter));
     }
 }
@@ -51,13 +52,13 @@ class GameView {
         this.canvas.width = 300;
         this.canvas.height = 400;
 
-        this.restartButton.addEventListener("click", () => this.StartGame());
-        this.themeSelector.addEventListener("change", (e) => this.ChangeTheme(e.target.value));
+        this.restartButton.addEventListener("click", () => this.startGame());
+        this.themeSelector.addEventListener("change", (e) => this.changeTheme(e.target.value));
 
-        this.StartGame();
+        this.startGame();
     }
 
-    GetThemeColor() {
+    getThemeColor() {
         switch (this.theme) {
             case "dark": return "white";
             case "cartoon": return "blue";
@@ -65,18 +66,18 @@ class GameView {
         }
     }
 
-    StartGame() {
-        this.model.ResetGame();
+    startGame() {
+        this.model.resetGame();
         this.hintElement.textContent = `Подсказка: ${this.model.hint}`;
-        this.DrawGallows();
-        this.UpdateWordDisplay();
-        this.GenerateLetters();
+        this.drawGallows();
+        this.updateWordDisplay();
+        this.generateLetters();
         this.restartButton.style.display = "none";
     }
 
-    DrawGallows() {
+    drawGallows() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.strokeStyle = this.GetThemeColor();
+        this.ctx.strokeStyle = this.getThemeColor();
         this.ctx.lineWidth = 3;
 
         this.ctx.beginPath();
@@ -89,9 +90,9 @@ class GameView {
         this.ctx.stroke();
     }
 
-    DrawHangman() {
+    drawHangman() {
         const ctx = this.ctx;
-        ctx.strokeStyle = this.GetThemeColor();
+        ctx.strokeStyle = this.getThemeColor();
         const drawSteps = [
             () => { ctx.beginPath(); ctx.arc(200, 100, 20, 0, Math.PI * 2); ctx.stroke(); },
             () => { ctx.moveTo(200, 120); ctx.lineTo(200, 200); ctx.stroke(); },
@@ -104,83 +105,83 @@ class GameView {
         drawSteps.slice(0, this.model.wrongGuesses).forEach(step => step());
     }
 
-    UpdateWordDisplay() {
+    updateWordDisplay() {
         this.wordDisplay.innerHTML = this.model.selectedWord
             .split("")
             .map(letter => this.model.guessedLetters.includes(letter) ? letter : "_")
             .join(" ");
 
-        if (this.model.IsGameWon()) {
-            this.AlertGameOver(true);
+        if (this.model.isGameWon()) {
+            this.alertGameOver(true);
         }
     }
 
-    GenerateLetters() {
+    generateLetters() {
         this.lettersContainer.innerHTML = "";
         "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".split("").forEach(letter => {
             const btn = document.createElement("span");
             btn.classList.add("letter");
             btn.textContent = letter;
-            btn.addEventListener("click", () => this.HandleLetterClick(letter, btn));
-            this.UpdateAdditionalInfo();
+            btn.addEventListener("click", () => this.handleLetterClick(letter, btn));
+            this.updateAdditionalInfo();
             this.lettersContainer.appendChild(btn);
         });
     }
 
-    HandleLetterClick(letter, btn) {
-        if (this.model.GuessLetter(letter)) {
-            this.UpdateAdditionalInfo();
+    handleLetterClick(letter, btn) {
+        if (this.model.guessLetter(letter)) {
+            this.updateAdditionalInfo();
             btn.classList.add("correct");
         } else {
             btn.classList.add("wrong");
-            this.UpdateAdditionalInfo();
-            this.DrawHangman();
+            this.updateAdditionalInfo();
+            this.drawHangman();
         }
-        this.UpdateWordDisplay();
+        this.updateWordDisplay();
 
-        if (this.model.IsGameOver()) {
-            this.AlertGameOver(this.model.IsGameWon());
+        if (this.model.isGameOver()) {
+            this.alertGameOver(this.model.isGameWon());
         }
     }
 
-    AlertGameOver(won) {
+    alertGameOver(won) {
         setTimeout(() => {
             alert(won ? "Ты выйграл, молодчина :)" : `Вы проиграли, давай ещё раз :( Слово было: ${this.model.selectedWord}`);
             this.restartButton.style.display = "block";
         }, 500);
     }
 
-    ChangeTheme(theme) {
+    changeTheme(theme) {
         this.theme = theme;
         document.body.classList.remove("classic", "dark", "cartoon");
         document.body.classList.add(theme);
-        this.DrawGallows();
-        this.DrawHangman();
+        this.drawGallows();
+        this.drawHangman();
 
         if (theme === "cartoon") {
-            this.ShowAdditionalInfo();
+            this.showAdditionalInfo();
         } else {
-            this.HideAdditionalInfo();
+            this.hideAdditionalInfo();
         }
     }
 
-    ShowAdditionalInfo() {
+    showAdditionalInfo() {
         if (!this.infoPanel) {
             this.infoPanel = document.createElement("div");
             this.infoPanel.id = "info-panel";
             document.body.appendChild(this.infoPanel);
         }
-        this.UpdateAdditionalInfo();
+        this.updateAdditionalInfo();
     }
 
-    HideAdditionalInfo() {
+    hideAdditionalInfo() {
         if (this.infoPanel) {
             this.infoPanel.remove();
             this.infoPanel = null;
         }
     }
 
-    UpdateAdditionalInfo() {
+    updateAdditionalInfo() {
         if (this.infoPanel) {
             this.infoPanel.innerHTML = `
             <p>Использованные буквы: ${this.model.guessedLetters.join(", ") || "Нет"}</p>
@@ -191,11 +192,11 @@ class GameView {
     }
 }
 
-async function LoadWordsAndStartGame() {
+async function loadWordsAndstartGame() {
     const response = await fetch("words.json");
     const words = await response.json();
     const model = new GameModel(words);
     new GameView(model);
 }
 
-window.onload = LoadWordsAndStartGame;
+window.onload = loadWordsAndstartGame;
