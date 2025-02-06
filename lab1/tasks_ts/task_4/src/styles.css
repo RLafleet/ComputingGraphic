@@ -29,13 +29,11 @@ canvas {
     color: white;
 }
 
-/* Классическая тема (по умолчанию) */
 .classic {
     background-color: white;
     color: black;
 }
 
-/* Тёмная тема */
 .dark {
     background-color: #6b3a3a;
     color: white;
@@ -58,7 +56,6 @@ canvas {
     background-color: red;
 }
 
-/* Мультяшная тема */
 .cartoon {
     background-color: lightblue;
     color: darkblue;
