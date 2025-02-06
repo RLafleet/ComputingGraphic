@@ -14,7 +14,9 @@ class GameModel {
     }
 
     guessLetter(letter) {
-        if (this.guessedLetters.includes(letter) || this.wrongGuesses >= this.maxMistakes) return false;
+        if (this.guessedLetters.includes(letter) || this.wrongGuesses >= this.maxMistakes) {
+            return false;
+        }
 
         if (this.selectedWord.includes(letter)) {
             this.guessedLetters.push(letter);
