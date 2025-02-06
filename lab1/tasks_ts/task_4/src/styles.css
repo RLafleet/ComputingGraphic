@@ -82,3 +82,12 @@ canvas {
     background-color: orange;
 }
 
+#info-panel {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 0, 0, 0.8);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+}
