@@ -52,7 +52,7 @@ class GameView {
         this.canvas.height = 400;
 
         this.restartButton.addEventListener("click", () => this.StartGame());
-        this.themeSelector.addEventListener("change", (e) => this.СhangeTheme(e.target.value));
+        this.themeSelector.addEventListener("change", (e) => this.ChangeTheme(e.target.value));
 
         this.StartGame();
     }
@@ -150,7 +150,7 @@ class GameView {
         }, 500);
     }
 
-    СhangeTheme(theme) {
+    ChangeTheme(theme) {
         this.theme = theme;
         document.body.classList.remove("classic", "dark", "cartoon");
         document.body.classList.add(theme);
