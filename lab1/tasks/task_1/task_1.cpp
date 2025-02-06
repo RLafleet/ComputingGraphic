@@ -86,7 +86,15 @@ int main(int argc, char* argv[])
 
     int screenWidth = 800;
     int screenHeight = 600;
-    SDL_Window* window = SDL_CreateWindow("Circle Drawing", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, SDL_WINDOW_SHOWN);
+    SDL_Window* window = SDL_CreateWindow
+    (
+        "Circle Drawing", 
+        SDL_WINDOWPOS_UNDEFINED, 
+        SDL_WINDOWPOS_UNDEFINED, 
+        screenWidth, 
+        screenHeight, 
+        SDL_WINDOW_SHOWN
+    );
     if (window == nullptr) 
     {
         std::cout << "Window creation failed: " << SDL_GetError() << std::endl;
