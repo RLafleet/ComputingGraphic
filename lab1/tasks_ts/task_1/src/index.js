@@ -1,4 +1,3 @@
-const SIZE = 'bold 50px sans-serif';
 const INIT_Y = 100;
 const HEIGHT_OF_JUMP = 50;
 const ANIMATION_DURATION = 1000;
@@ -24,8 +23,33 @@ class JumpingLetter {
         const y = this.initialY - jumpProgress * this.jumpHeight;
 
         ctx.fillStyle = this.color;
-        ctx.font = SIZE;
-        ctx.fillText(this.initial, this.x, y);
+
+        ctx.beginPath();
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        switch (this.initial) {
+            case 'A':
+                ctx.moveTo(this.x, y);
+                ctx.lineTo(this.x + 15, y - 30);
+                ctx.lineTo(this.x + 30, y);
+                ctx.moveTo(this.x + 5, y - 10);
+                ctx.lineTo(this.x + 25, y - 10);
+                break;
+            case 'B':
+                ctx.moveTo(this.x, y - 30);
+                ctx.lineTo(this.x, y);
+                ctx.moveTo(this.x, y - 30);
+                ctx.quadraticCurveTo(this.x + 30, y - 30, this.x + 30, y - 15);
+                ctx.quadraticCurveTo(this.x + 30, y, this.x, y);
+                break;
+            case 'C':
+                ctx.arc(this.x + 15, y - 15, 15, Math.PI * 0.5, Math.PI * 1.5);
+                break;
+            default:
+                console.warn(`Letter "${this.initial}" not defined`);
+                break;
+        }
+        ctx.stroke();
     }
 }
 
