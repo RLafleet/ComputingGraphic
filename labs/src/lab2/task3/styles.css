@@ -1,0 +1,433 @@
+@charset "UTF-8";
+*,
+ :after,
+ :before {
+    box-sizing: border-box;
+}
+
+html {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    -ms-user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    position: fixed;
+    user-select: none;
+    width: 100%;
+    height: 100%;
+    background-color: #697279;
+    overflow: hidden;
+    font: 16px/1.5 Roboto, sans-serif;
+}
+
+.blackout {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 130%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.none {
+    display: none !important;
+}
+
+.icon {
+    color: #e6e6e6;
+    cursor: pointer;
+    position: absolute;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    -ms-user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    background-size: 100% 100% !important;
+}
+
+.desc {
+    width: 120px;
+    position: absolute;
+    bottom: -20px;
+    left: -35px;
+    word-break: break-all;
+    -ms-user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+.table {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background-color: inherit;
+    overflow: hidden;
+}
+
+.takenIcon {
+    width: 48px;
+    height: 48px;
+    border: 1px solid rgba(0, 0, 0, 0.5);
+    background-color: rgba(196, 255, 255, 0.5);
+}
+
+.menu {
+    padding: 5px;
+    height: 10%;
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    display: flex;
+}
+
+
+/*Информация, новые элементы, корзина*/
+
+.add {
+    background: url(images/add.svg) center center no-repeat;
+}
+
+.info {
+    background: url(images/info.svg) center center no-repeat;
+}
+
+.drop {
+    background: url(images/drop.svg) center center no-repeat;
+}
+
+.add,
+.info,
+.drop {
+    width: 33%;
+    height: 100%;
+    background-size: 100% 100%;
+}
+
+.add:hover,
+.info:hover,
+.drop:hover {
+    transform: scale(0.95);
+}
+
+.drop:active {
+    transform: scale(0.9);
+}
+
+
+/*Лист с иконками*/
+
+.icons,
+.rules {
+    background-color: inherit;
+    color: #e6e6e6;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 2;
+    position: absolute;
+    top: 0;
+    border: 5px solid black;
+    width: 100%;
+    height: 100%;
+    box-shadow: 5px 5px 5px 1px rgba(0, 0, 0, 0.7);
+}
+
+.rules {
+    padding: 2%;
+}
+
+.rules h2 {
+    font-size: 2.5em;
+}
+
+.rules li {
+    list-style: none;
+    padding: 3px;
+}
+
+.rules label {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 3px;
+}
+
+#color {
+    display: block;
+    width: 100%;
+}
+
+.close {
+    background-color: #D8D8D8;
+    display: block;
+    text-align: center;
+    font-size: 1.2em;
+    margin-left: auto;
+    padding: 5px 50px;
+}
+
+.resetColor {
+    background-color: #D8D8D8;
+    display: block;
+    padding: 5px 20px;
+    margin-top: 5px;
+}
+
+.aboutDelete {
+    margin-top: 20px;
+}
+
+.delete {
+    background-color: #7a0007;
+    color: #e6e6e6;
+    padding: 3px;
+}
+
+.red {
+    color: black;
+}
+
+.caution {
+    text-align: center;
+    font-size: 1.6em;
+    position: absolute;
+    left: 0;
+    width: 100%;
+    top: 35%;
+    height: 30%;
+    background-color: #0054a7;
+}
+
+.caution p {
+    padding: 5%;
+}
+
+.buttons {
+    width: 100%;
+    margin: 0 auto;
+    justify-content: center;
+    position: absolute;
+    bottom: 2%;
+    display: flex;
+}
+
+#notDelete,
+#deleteCertain {
+    font-size: 1.5rem;
+    width: 47%;
+    padding: 2px;
+}
+
+#notDelete {
+    left: 1%;
+}
+
+#deleteCertain {
+    right: 1%;
+}
+
+
+/*Меню иконок*/
+
+.icons {
+    display: flex;
+    flex-flow: row wrap;
+    align-content: flex-start;
+    justify-content: center;
+}
+
+.iconMenu {
+    position: relative;
+    margin: 20px;
+    width: 50px;
+    height: 50px;
+    display: inline-block;
+}
+
+.iconMenu .desc {
+    font-size: 0.85em;
+}
+
+.selectedIcon:before {
+    position: absolute;
+    content: "";
+    width: 15px;
+    height: 15px;
+    background: url(images/selected.png);
+}
+
+.iconsHead {
+    display: flex;
+    width: 100%;
+    height: 10%;
+}
+
+.iconsHead input {
+    width: 60%;
+    padding: 5px;
+}
+
+.addIcons {
+    background-color: #D8D8D8;
+    width: 40%;
+}
+
+.iconsHead input,
+.find,
+.addIcons {
+    border: 1px solid black;
+    outline: none;
+}
+
+.find:focus,
+.addIcons:focus,
+.drop:focus {
+    transform: scale(0.96);
+}
+
+.got {
+    color: #e6e6e6;
+    font-size: 1.5em;
+    text-align: center;
+    padding-top: 10px;
+}
+
+@media (min-width: 700px) {
+    .icon {
+        width: 64px;
+        height: 64px;
+    }
+    .desc {
+        width: 128px;
+        left: -32px;
+        font-size: 1em;
+    }
+    .rules {
+        font-size: 1.4em;
+    }
+    .iconMenu .desc {
+        font-size: 1em;
+    }
+}
+
+@media (min-width: 1200px) {
+    .icons,
+    .rules {
+        position: absolute;
+        width: 50%;
+        left: 25%;
+        height: 60%;
+        top: 20%;
+        padding: 1%;
+    }
+    .caution {
+        font-size: 1.2em;
+    }
+    .iconsHead {
+        height: 15%;
+    }
+}
+
+.message-box {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    height: 50px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px;
+    text-align: center;
+    border-radius: 5px;
+    display: none;
+    /* Скрыто по умолчанию */
+}
+
+.delete-icon {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 50px;
+    height: 50px;
+    background-color: red;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 24px;
+}
+
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+.left-panel,
+.right-panel {
+    flex: 1;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.left-panel {
+    border-right: 2px solid #ccc;
+}
+
+.open-elements {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.icon {
+    width: 50px;
+    height: 50px;
+    background-size: cover;
+    cursor: pointer;
+    position: relative;
+}
+
+.icon p {
+    margin: 0;
+    font-size: 12px;
+    text-align: center;
+}
+
+#sort-button {
+    margin-bottom: 10px;
+}
+
+.table {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.message-box {
+    display: none;
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.delete-icon {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 24px;
+}

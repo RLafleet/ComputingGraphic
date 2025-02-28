@@ -1,0 +1,4 @@
+﻿  task_3.cpp
+C:\Malov\PC\labs\src\lab2\c++\lab\task_3\task_3.cpp(178,15): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Malov\PC\labs\src\lab2\c++\lab\task_3\task_3.cpp(186,15): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Malov\PC\labs\src\lab2\c++\lab\task_3\task_3.cpp(217,17): error C2065: 'hdc': undeclared identifier
