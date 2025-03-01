@@ -1,12 +1,12 @@
 function drawScene(gl, programInfo, buffers) {
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearColor(0.8, 0.8, 0.8, 1.0);
     gl.clearDepth(1.0);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    const fieldOfView = 45 * Math.PI / 180; // in radians
+    const fieldOfView = 45 * Math.PI / 180;
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     const zNear = 0.1;
     const zFar = 100.0;
@@ -20,9 +20,8 @@ function drawScene(gl, programInfo, buffers) {
 
     const modelViewMatrix = mat4.create();
 
-    mat4.translate(modelViewMatrix, // destination matrix
-        modelViewMatrix, // matrix to translate
-        [-0.0, 0.0, -6.0]); // amount to translate
+    mat4.translate(modelViewMatrix,
+        modelViewMatrix, [-0.0, 0.0, -6.0]);
 
     {
         const numComponents = 2;
@@ -83,46 +82,13 @@ function drawScene(gl, programInfo, buffers) {
     }
 }
 
-//
-// initBuffers
-//
-// Initialize the buffers we'll need. For this demo, we just
-// have one object -- a simple two-dimensional square.
-//
 function initBuffers(gl, gridPosArray, gridColorsArray) {
-
-    // Create a buffer for the square's positions.
 
     const positionBuffer = gl.createBuffer();
 
-    // Select the positionBuffer as the one to apply buffer
-    // operations to from here out.
-
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-    // Now create an array of positions for the square.
-    /*
-      const positions = [
-         1.0,  1.0,
-        -1.0,  1.0,
-         1.0, -1.0,
-        -1.0, -1.0,
-      ];
-    */
-    // Now pass the list of positions into WebGL to build the
-    // shape. We do this by creating a Float32Array from the
-    // JavaScript array, then use it to fill the current buffer.
-
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(gridPosArray), gl.STATIC_DRAW);
-
-    // Now set up the colors for the vertices
-
-    var colors = [
-        1.0, 1.0, 1.0, 1.0, // white
-        1.0, 1.0, 1.0, 1.0, // white
-        1.0, 1.0, 1.0, 1.0, // white
-        1.0, 1.0, 1.0, 1.0, // white
-    ];
 
     const colorBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
