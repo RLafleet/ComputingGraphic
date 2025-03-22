@@ -85,7 +85,6 @@ export class Labirint {
         return false;
     }
 
-
     private lockPointer() {
         const canvas = this.gl.canvas as HTMLCanvasElement;
         canvas.requestPointerLock();
@@ -111,6 +110,47 @@ export class Labirint {
         this.cameraFront[1] = Math.cos(this.pitch) * Math.sin(this.yaw);
         this.cameraFront[2] = Math.sin(this.pitch);
         vec3.normalize(this.cameraFront, this.cameraFront);
+    }
+
+    public render() {
+        const gl = this.gl;
+        const program = this.program;
+
+        gl.useProgram(program);
+        gl.enable(gl.DEPTH_TEST);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0); 
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        const projectionMatrix = mat4.create();
+        mat4.perspective(projectionMatrix, (45 * Math.PI) / 180, gl.canvas.width / gl.canvas.height, 0.1, 100.0);
+
+        const modelViewMatrix = mat4.create();
+        const target = vec3.create();
+        vec3.add(target, this.cameraPosition, this.cameraFront);
+        mat4.lookAt(modelViewMatrix, this.cameraPosition, target, this.cameraUp);
+
+        const uProjection = gl.getUniformLocation(program, 'uProjectionMatrix');
+        const uModelView = gl.getUniformLocation(program, 'uModelViewMatrix');
+        gl.uniformMatrix4fv(uProjection, false, projectionMatrix);
+        gl.uniformMatrix4fv(uModelView, false, modelViewMatrix);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        const uSampler = gl.getUniformLocation(program, 'uSampler');
+        gl.uniform1i(uSampler, 0);
+
+        const positionLocation = gl.getAttribLocation(program, 'aVertexPosition');
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+        gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(positionLocation);
+
+        const textureCoordLocation = gl.getAttribLocation(program, 'aTextureCoord');
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+        gl.vertexAttribPointer(textureCoordLocation, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(textureCoordLocation);
+
+        const wallCount = this.walls.flat().filter(x => x === 1).length;
+        gl.drawArrays(gl.TRIANGLES, 0, wallCount * 36);
     }
 
     private handleKeyDown(event: KeyboardEvent) {
@@ -167,46 +207,6 @@ export class Labirint {
         this.render();
     }
 
-    public render() {
-        const gl = this.gl;
-        const program = this.program;
-
-        gl.useProgram(program);
-        gl.enable(gl.DEPTH_TEST);
-        gl.clearColor(0.0, 0.0, 0.0, 1.0); 
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-        const projectionMatrix = mat4.create();
-        mat4.perspective(projectionMatrix, (45 * Math.PI) / 180, gl.canvas.width / gl.canvas.height, 0.1, 100.0);
-
-        const modelViewMatrix = mat4.create();
-        const target = vec3.create();
-        vec3.add(target, this.cameraPosition, this.cameraFront);
-        mat4.lookAt(modelViewMatrix, this.cameraPosition, target, this.cameraUp);
-
-        const uProjection = gl.getUniformLocation(program, 'uProjectionMatrix');
-        const uModelView = gl.getUniformLocation(program, 'uModelViewMatrix');
-        gl.uniformMatrix4fv(uProjection, false, projectionMatrix);
-        gl.uniformMatrix4fv(uModelView, false, modelViewMatrix);
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, this.texture);
-        const uSampler = gl.getUniformLocation(program, 'uSampler');
-        gl.uniform1i(uSampler, 0);
-
-        const positionLocation = gl.getAttribLocation(program, 'aVertexPosition');
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-        gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(positionLocation);
-
-        const textureCoordLocation = gl.getAttribLocation(program, 'aTextureCoord');
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
-        gl.vertexAttribPointer(textureCoordLocation, 2, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(textureCoordLocation);
-
-        const wallCount = this.walls.flat().filter(x => x === 1).length;
-        gl.drawArrays(gl.TRIANGLES, 0, wallCount * 36);
-    }
 
     private generateMaze() {
         this.walls = [
