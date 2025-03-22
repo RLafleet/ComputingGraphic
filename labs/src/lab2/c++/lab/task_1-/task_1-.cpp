@@ -8,6 +8,7 @@
 
 using namespace Gdiplus;
 
+//не использовать глобальные переменные
 HWND hWnd;
 Bitmap *g_pBitmap = nullptr;
 int g_imageOffsetX = 0;
@@ -217,6 +218,7 @@ void DrawChessboard(Graphics &graphics, int width, int height)
 
 void CreateBackBuffer(HWND hwnd)
 {
+    // использовать умные указатели
     if (g_pBackBuffer)
     {
         delete g_pBackBuffer;

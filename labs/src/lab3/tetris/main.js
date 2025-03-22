@@ -313,13 +313,7 @@ class Game {
     keyEventListener() {
         document.addEventListener('keydown', (event) => {
             const keyname = event.key;
-            if (this.state === "OVER") {
-                if (keyname === "r") {
-                    this.restart = 1;
-                } else if (keyname === "q") {
-                    closeBrowserTab();
-                }
-            } else {
+            if (this.state !== "OVER") {
                 if (keyname === "ArrowLeft") {
                     this.moveLeft();
                 } else if (keyname === "ArrowRight") {
@@ -331,11 +325,6 @@ class Game {
                 }
             }
         });
-
-        function closeBrowserTab() {
-            window.opener = null;
-            window.close();
-        }
     }
 }
 
