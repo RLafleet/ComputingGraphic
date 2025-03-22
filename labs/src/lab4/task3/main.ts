@@ -14,7 +14,7 @@ class App {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
 
-        const gl = this.canvas.getContext('webgl');
+        const gl = this.canvas.getContext('webgl', { alpha: false })!;
         if (!gl) {
             throw new Error('WebGL не поддерживается');
         }

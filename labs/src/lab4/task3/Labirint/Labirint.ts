@@ -1,12 +1,14 @@
 import { mat4, vec3 } from 'gl-matrix';
+import { loadTexture } from './loadTexture';
 
 export class Labirint {
     private gl: WebGLRenderingContext;
     private program: WebGLProgram;
     private walls: number[][] = [];
     private cellSize = 1.0;
-    private positionBuffer: WebGLBuffer;
-    private colorBuffer: WebGLBuffer;
+    private positionBuffer!: WebGLBuffer;
+    private textureCoordBuffer!: WebGLBuffer; 
+    private texture: WebGLTexture;
 
     private cameraPosition = vec3.fromValues(0.37, 1.30, 1.30);
     private cameraFront = vec3.fromValues(0.0046110741095617414, 0.99, 0.04278077930212021);
@@ -17,38 +19,25 @@ export class Labirint {
     constructor(gl: WebGLRenderingContext, program: WebGLProgram) {
         this.gl = gl;
         this.program = program;
-        this.generateMaze(10, 10);
+        this.generateMaze();
         this.initBuffers();
-
+        this.texture = loadTexture(gl, './walls.png');
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        
         window.addEventListener('keydown', (event) => this.handleKeyDown(event));
         window.addEventListener('mousemove', (event) => this.handleMouseMove(event));
         window.addEventListener('click', () => this.lockPointer());
     }
 
-    private generateMaze(width: number, height: number) {
-        this.walls = [
-            [1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,1,0,0,0,0,1],
-            [1,1,1,0,1,0,1,1,0,1],
-            [1,0,0,0,0,0,0,0,0,1],
-            [1,0,1,1,1,1,1,0,1,1],
-            [1,0,0,0,0,0,1,0,0,1],
-            [1,1,1,0,1,0,1,1,0,1],
-            [1,0,0,0,1,0,0,0,0,1],
-            [1,0,1,0,0,0,1,0,1,1],
-            [1,1,1,1,1,1,1,1,1,1]
-        ];
-    }
-
     private initBuffers() {
         const gl = this.gl;
         const positions: number[] = [];
-        const colors: number[] = [];
+        const textureCoords: number[] = []; 
 
         for (let y = 0; y < this.walls.length; y++) {
-            for (let x = 0; x < this.walls[y].length; x++) {
-                if (this.walls[y][x] === 1) {
-                    this.addWall(x, y, positions, colors);
+            for (let x = 0; x < (this.walls[y]?.length || 0); x++) {
+                if (this.walls?.[y]?.[x]=== 1) {
+                    this.addWall(x, y, positions, textureCoords);
                 }
             }
         }
@@ -57,64 +46,9 @@ export class Labirint {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
-        this.colorBuffer = gl.createBuffer()!;
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-    }
-
-    private addWall(x: number, y: number, positions: number[], colors: number[]) {
-        const height = 3.0;
-        const left = -5 + x * this.cellSize;
-        const right = left + this.cellSize;
-        const front = 5 - y * this.cellSize;
-        const back = front - this.cellSize;
-
-        const vertices = [
-            // Передняя грань
-            left, front, 0,
-            right, front, 0,
-            left, front, height,
-            right, front, height,
-            left, front, height,
-            right, front, 0,
-
-            // Задняя грань
-            left, back, 0,
-            right, back, 0,
-            left, back, height,
-            right, back, height,
-            left, back, height,
-            right, back, 0,
-
-            // Верхняя грань
-            left, front, height,
-            right, front, height,
-            left, back, height,
-            right, back, height,
-            left, back, height,
-            right, front, height,
-
-            // Боковые грани
-            left, front, 0,
-            left, back, 0,
-            left, front, height,
-            left, back, height,
-            left, front, height,
-            left, back, 0,
-
-            right, front, 0,
-            right, back, 0,
-            right, front, height,
-            right, back, height,
-            right, front, height,
-            right, back, 0
-        ];
-
-        for (let i = 0; i < 36; i++) {
-            colors.push(0.8, 0.8, 0.8, 1.0);
-        }
-
-        positions.push(...vertices);
+        this.textureCoordBuffer = gl.createBuffer()!; 
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
     }
 
     private checkCollision(x: number, y: number): boolean {
@@ -124,20 +58,20 @@ export class Labirint {
         const minY = y - cameraRadius;
         const maxY = y + cameraRadius;
 
-        const minXIndex = Math.floor((minX + 5) / this.cellSize);
-        const maxXIndex = Math.floor((maxX + 5) / this.cellSize);
-        const minYIndex = Math.floor((5 - maxY) / this.cellSize);
-        const maxYIndex = Math.floor((5 - minY) / this.cellSize);
+        const minXIndex = Math.floor((minX + 8) / this.cellSize); 
+        const maxXIndex = Math.floor((maxX + 8) / this.cellSize);
+        const minYIndex = Math.floor((8 - maxY) / this.cellSize); 
+        const maxYIndex = Math.floor((8 - minY) / this.cellSize);
 
         for (let xi = minXIndex; xi <= maxXIndex; xi++) {
             for (let yi = minYIndex; yi <= maxYIndex; yi++) {
-                if (xi < 0 || xi >= this.walls[0].length || yi < 0 || yi >= this.walls.length) {
+                if (xi < 0 || xi >= (this.walls[0]?.length || 0) || yi < 0 || yi >= this.walls.length) {
                     return true;
                 }
-                if (this.walls[yi][xi] === 1) {
-                    const wallLeft = -5 + xi * this.cellSize;
+                if (this.walls?.[yi]?.[xi] === 1) {
+                    const wallLeft = -8 + xi * this.cellSize;
                     const wallRight = wallLeft + this.cellSize;
-                    const wallFront = 5 - yi * this.cellSize;
+                    const wallFront = 8 - yi * this.cellSize;
                     const wallBack = wallFront - this.cellSize;
 
                     const overlapX = minX < wallRight && maxX > wallLeft;
@@ -151,6 +85,7 @@ export class Labirint {
         return false;
     }
 
+
     private lockPointer() {
         const canvas = this.gl.canvas as HTMLCanvasElement;
         canvas.requestPointerLock();
@@ -158,11 +93,15 @@ export class Labirint {
 
     private handleMouseMove(event: MouseEvent) {
         if (document.pointerLockElement !== this.gl.canvas) return;
-
+    
         const sensitivity = 0.002;
         this.yaw -= event.movementX * sensitivity;
         this.pitch -= event.movementY * sensitivity;
-
+    
+        const maxPitch = Math.PI / 2 - 0.1;
+        const minPitch = -Math.PI / 2 + 0.1;
+        this.pitch = Math.max(minPitch, Math.min(maxPitch, this.pitch));
+    
         this.updateCameraVectors();
         this.render();
     }
@@ -234,6 +173,8 @@ export class Labirint {
 
         gl.useProgram(program);
         gl.enable(gl.DEPTH_TEST);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0); 
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         const projectionMatrix = mat4.create();
         mat4.perspective(projectionMatrix, (45 * Math.PI) / 180, gl.canvas.width / gl.canvas.height, 0.1, 100.0);
@@ -248,17 +189,108 @@ export class Labirint {
         gl.uniformMatrix4fv(uProjection, false, projectionMatrix);
         gl.uniformMatrix4fv(uModelView, false, modelViewMatrix);
 
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        const uSampler = gl.getUniformLocation(program, 'uSampler');
+        gl.uniform1i(uSampler, 0);
+
         const positionLocation = gl.getAttribLocation(program, 'aVertexPosition');
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
         gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(positionLocation);
 
-        const wallCount = this.walls.flat().filter(x => x === 1).length;
-        const colorLocation = gl.getAttribLocation(program, 'aVertexColor');
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
-        gl.vertexAttribPointer(colorLocation, 4, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(colorLocation);
+        const textureCoordLocation = gl.getAttribLocation(program, 'aTextureCoord');
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+        gl.vertexAttribPointer(textureCoordLocation, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(textureCoordLocation);
 
+        const wallCount = this.walls.flat().filter(x => x === 1).length;
         gl.drawArrays(gl.TRIANGLES, 0, wallCount * 36);
+    }
+
+    private generateMaze() {
+        this.walls = [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+            [1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1],
+            [1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        ];
+    }
+
+    private addWall(x: number, y: number, positions: number[], textureCoords: number[]) {
+        const height = 3.0;
+        const left = -8 + x * this.cellSize; 
+        const right = left + this.cellSize;
+        const front = 8 - y * this.cellSize; 
+        const back = front - this.cellSize;
+
+        const vertices = [
+            left, front, 0,
+            right, front, 0,
+            left, front, height,
+            right, front, height,
+            left, front, height,
+            right, front, 0,
+
+            left, back, 0,
+            right, back, 0,
+            left, back, height,
+            right, back, height,
+            left, back, height,
+            right, back, 0,
+
+            left, front, height,
+            right, front, height,
+            left, back, height,
+            right, back, height,
+            left, back, height,
+            right, front, height,
+
+            left, front, 0,
+            left, back, 0,
+            left, front, height,
+            left, back, height,
+            left, front, height,
+            left, back, 0,
+
+            right, front, 0,
+            right, back, 0,
+            right, front, height,
+            right, back, height,
+            right, front, height,
+            right, back, 0
+        ];
+
+        const texCoords = [
+            0, 0, 1, 0, 0, 1,
+            1, 1, 0, 1, 1, 0,
+
+            0, 0, 1, 0, 0, 1,
+            1, 1, 0, 1, 1, 0,
+
+            0, 0, 1, 0, 0, 1,
+            1, 1, 0, 1, 1, 0,
+
+            0, 0, 1, 0, 0, 1,
+            1, 1, 0, 1, 1, 0,
+
+            0, 0, 1, 0, 0, 1,
+            1, 1, 0, 1, 1, 0
+        ];
+
+        positions.push(...vertices);
+        textureCoords.push(...texCoords);
     }
 }

@@ -1,29 +1,27 @@
 const vertexShaderSource = `
-	attribute vec3 aVertexPosition;
-	attribute vec4 aVertexColor;
+attribute vec3 aVertexPosition;
+attribute vec2 aTextureCoord;
 
-	uniform mat4 uModelViewMatrix;
-	uniform mat4 uProjectionMatrix;
+uniform mat4 uModelViewMatrix;
+uniform mat4 uProjectionMatrix;
 
-	varying lowp vec4 vColor;
-	varying lowp vec3 vNormal;
+varying vec2 vTextureCoord;
 
-	void main() {
-		gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aVertexPosition, 1.0);
-		vColor = aVertexColor;
-		vNormal = vec3(0.0, 1.0, 0.0);
-	}
+void main() {
+    gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aVertexPosition, 1.0);
+    vTextureCoord = aTextureCoord;
+}
 `
 
 const fragmentShaderSource = `
-	varying lowp vec4 vColor;
-	varying lowp vec3 vNormal;
+precision mediump float;
 
-	void main() {
-		lowp vec3 lightDir = normalize(vec3(0.3, 1.0, 0.5));
-		lowp float diff = max(dot(vNormal, lightDir), 0.2);
-		gl_FragColor = vColor * vec4(vec3(diff), 1.0);
-	}
+varying vec2 vTextureCoord;
+uniform sampler2D uSampler;
+
+void main() {
+	gl_FragColor = texture2D(uSampler, vTextureCoord);
+}
 `
 
 const compileShader = (gl: WebGLRenderingContext, type: number, source: string): WebGLShader => {
