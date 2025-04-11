@@ -1,6 +1,7 @@
 import { mat4, vec3 } from 'gl-matrix';
 import { loadTexture } from './loadTexture';
 
+// масштаб для текстур лучше
 export class Labirint {
     private gl: WebGLRenderingContext;
     private program: WebGLProgram;
