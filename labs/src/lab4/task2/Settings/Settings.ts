@@ -35,7 +35,7 @@ class Settings {
 		})
 
 		const text = document.createElement('div')
-		text.innerText = 'Интенсивность света'
+		text.innerText = 'Количество света'
 
 		innerBlock.appendChild(slider)
 		innerBlock.appendChild(text)

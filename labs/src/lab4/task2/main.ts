@@ -1,5 +1,5 @@
 import './index.css'
-import {KleinBottle} from './MobiusStrip/KleinBottle'
+import {KleinBottle} from './KleinBottle/KleinBottle'
 import {Settings} from './Settings/Settings'
 import {createShaderProgram} from './WebGLUtils'
 

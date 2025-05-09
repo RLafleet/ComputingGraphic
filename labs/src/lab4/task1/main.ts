@@ -8,7 +8,7 @@ class App {
 	private readonly program: WebGLProgram
 	private rhombicosidodecahedron: PentagonalHexecontahedron
 	private then = 0
-	private cubeRotation = 0
+	private cubeRotation = 1
 
 	constructor() {
 		this.canvas = document.createElement('canvas')
@@ -28,7 +28,7 @@ class App {
 	}
 
 	render = (now: number) => {
-		now *= 0.001 
+		now *= 0.000
 		const deltaTime = now - this.then
 		this.then = now
 		this.rhombicosidodecahedron.render(this.cubeRotation)

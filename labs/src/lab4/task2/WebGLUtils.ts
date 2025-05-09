@@ -1,3 +1,5 @@
+// для чего нужна и как она получается uNormalMatrix + 
+// lowp вспомнить +
 const vertexShaderSource = `
     attribute vec4 aVertexPosition;
     attribute vec4 aVertexColor;
@@ -17,6 +19,8 @@ const vertexShaderSource = `
     }
 `
 
+// dot, что возвращает и зачем там max + 
+// gl_FrontFacing ?  +
 const fragmentShaderSource = `
 	precision mediump float;
 
@@ -27,7 +31,7 @@ const fragmentShaderSource = `
 	
     void main(void) {
       vec3 normal = normalize(vNormal);
-      normal = gl_FrontFacing ? normal : -normal;
+      normal = gl_FrontFacing ? normal : normal;
       float light = max(dot(normal, uReverseLightDirection), 0.0);
       gl_FragColor = vColor;
       gl_FragColor.rgb *= light;

@@ -27,6 +27,8 @@ class KleinBottle {
 		private readonly gl: WebGLRenderingContext,
 		private readonly shaderProgram: WebGLProgram,
 	) {
+		// в какой системе координат выполняется освещение +
+
 		const buffers = this.initBuffers()
 		this.positionBuffer = buffers.position
 		this.colorBuffer = buffers.color
@@ -48,39 +50,32 @@ class KleinBottle {
 
 	render(cameraRotationX: number, cameraRotationY: number, lightIntensity: number) {
 		const gl = this.gl
-		gl.clearColor(0.0, 0.0, 0.0, 0.1) // Clear to black, fully opaque
-		gl.clearDepth(1.0) // Clear everything
-		gl.enable(gl.DEPTH_TEST) // Enable depth testing
-		gl.depthFunc(gl.LEQUAL) // Near things obscure far things
-
-		// Clear the canvas before we start drawing on it.
+		gl.clearColor(0.0, 0.0, 0.0, 0.1) 
+		gl.clearDepth(1.0) 
+		gl.enable(gl.DEPTH_TEST)
+		gl.depthFunc(gl.LEQUAL) 
 
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		// Create a perspective matrix, a special matrix that is
-		// used to simulate the distortion of perspective in a camera.
-		// Our field of view is 45 degrees, with a width/height
-		// ratio that matches the display size of the canvas
-		// and we only want to see objects between 0.1 units
-		// and 100 units away from the camera.
-
-		const fieldOfView = (45 * Math.PI) / 180 // in radians
+		const fieldOfView = (45 * Math.PI) / 180 
 		const aspect = gl.canvas.width / gl.canvas.height
 		const zNear = 0.001
 		const zFar = 300.0
 		const projectionMatrix = mat4.create()
 
-		// note: glmatrix.js always has the first argument
-		// as the destination to receive the result.
 		mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar)
 
-		// Вычисляем положение камеры в сферических координатах
 		const distance = 40.0
+		// вывести эти формулы, нарисовать рисунок
+		// разрезать ленту мебиуса вдоль и посмотреть
 		const eye: ReadonlyVec3 = [
 			distance * Math.cos(cameraRotationX) * Math.sin(cameraRotationY),
 			distance * Math.sin(cameraRotationX),
 			distance * Math.cos(cameraRotationX) * Math.cos(cameraRotationY),
 		]
+		console.log('1', 			distance * Math.cos(cameraRotationX) * Math.sin(cameraRotationY),)
+		console.log('2', 			distance * Math.sin(cameraRotationX),)
+		console.log('3', 			distance * Math.cos(cameraRotationX) * Math.cos(cameraRotationY),)
 		const center: ReadonlyVec3 = [0, 0, 0]
 		const up: ReadonlyVec3 = [0, 1, 0]
 
@@ -90,21 +85,16 @@ class KleinBottle {
 		const normalMatrix = mat3.create()
 		mat3.normalFromMat4(normalMatrix, modelViewMatrix)
 
-		// Tell WebGL how to pull out the positions from the position
-		// buffer into the vertexPosition attribute.
 		this.setPositionAttribute()
 
 		this.setColorAttribute()
 
 		this.setNormalAttribute()
 
-		// Tell WebGL which indices to use to index the vertices
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer)
 
-		// Tell WebGL to use our program when drawing
 		gl.useProgram(this.shaderProgram)
 
-		// Set the shader uniforms
 		gl.uniformMatrix3fv(
 			this.normalMatrixLocation,
 			false,
@@ -121,24 +111,22 @@ class KleinBottle {
 			modelViewMatrix,
 		)
 
-		// set the light direction.
 		const lightDir = vec3.fromValues(-1, 1, 1)
 		vec3.normalize(lightDir, lightDir)
 		vec3.scale(lightDir, lightDir, lightIntensity)
 		gl.uniform3fv(this.reverseLightDirection, lightDir)
 
-		// Отрисовка граней
 		{
 			const vertexCount = this.indexCount
+			// выяснить что задает параметр type + 
 			const type = gl.UNSIGNED_SHORT
+			// offset для чего + 
 			const offset = 0
 			gl.drawElements(gl.TRIANGLES, vertexCount, type, offset)
 		}
 
-		// Отрисовка рёбер
 		{
 			gl.disableVertexAttribArray(this.vertexColor)
-			gl.vertexAttrib4f(this.vertexColor, 0, 0, 0, 1)
 			gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.edgeBuffer)
 			gl.drawElements(gl.LINES, this.edgeCount, gl.UNSIGNED_SHORT, 0)
 		}
@@ -147,11 +135,11 @@ class KleinBottle {
 	private setPositionAttribute() {
 		const gl = this.gl
 		const numComponents = 3
-		const type = gl.FLOAT // the data in the buffer is 32bit floats
-		const normalize = false // don't normalize
-		const stride = 0 // how many bytes to get from one set of values to the next
-		// 0 = use type and numComponents above
-		const offset = 0 // how many bytes inside the buffer to start from
+		const type = gl.FLOAT 
+		const normalize = false 
+		const stride = 0
+
+		const offset = 0 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer)
 		gl.vertexAttribPointer(
 			this.vertexPosition,
@@ -164,8 +152,6 @@ class KleinBottle {
 		gl.enableVertexAttribArray(this.vertexPosition)
 	}
 
-	// Tell WebGL how to pull out the colors from the color buffer
-	// into the vertexColor attribute.
 	private setColorAttribute() {
 		const gl = this.gl
 		const numComponents = 4
@@ -188,10 +174,10 @@ class KleinBottle {
 	private setNormalAttribute() {
 		const gl = this.gl
 		const numComponents = 3
-		const type = gl.FLOAT // the data in the buffer is 32bit floats
-		const normalize = false // don't normalize
-		const stride = 0 // how many bytes to get from one set of values to the next
-		const offset = 0 // how many bytes inside the buffer to start from
+		const type = gl.FLOAT 
+		const normalize = false 
+		const stride = 0 
+		const offset = 0 
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer)
 		gl.vertexAttribPointer(
 			this.normalLocation,
@@ -222,11 +208,8 @@ class KleinBottle {
 
 	private initPositionBuffer(): WebGLBuffer | null {
 		const gl = this.gl
-		// Create a buffer for the square's positions.
 		const positionBuffer = gl.createBuffer()
 
-		// Select the positionBuffer as the one to apply buffer
-		// operations to from here out.
 		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
 
 		const positions = this.getPositions()
@@ -251,6 +234,7 @@ class KleinBottle {
 		return colorBuffer
 	}
 
+	// для чего именно +
 	private initEdgeBuffer(): WebGLBuffer | null {
 		const gl = this.gl
 		const edgeIndices: number[] = []
@@ -268,15 +252,18 @@ class KleinBottle {
 		return edgeBuffer
 	}
 
+	// какие ещё есть примитивы кроме треугольников +
+	// - gl.POINTS
+	// - gl.LINES
+	// - gl.TRIANGLES
+	// - gl.TRIANGLE_STRIP
+	// - gl.TRIANGLE_FAN
 	private initIndexBuffer(): WebGLBuffer | null {
 		const gl = this.gl
 
 		const indexBuffer = gl.createBuffer()
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
 
-		// This array defines each face as two triangles, using the
-		// indices into the vertex array to specify each triangle's
-		// position.
 		const triangleFaces = this.getTriangleFaces()
 		const indices: number[] = []
 		for (const face of triangleFaces) {
@@ -305,8 +292,8 @@ class KleinBottle {
 		const uMax = 2 * Math.PI;
 		const vMin = 0;
 		const vMax = 2 * Math.PI;
-		const r = 1; // Original r
-		const scale = 0.8; // Original scale
+		const r = 1; 
+		const scale = 0.8;
 
 		for (let i = 0; i <= this.segmentsU; i++) {
 			const u = uMin + ((uMax - uMin) * i) / this.segmentsU;
@@ -333,7 +320,6 @@ class KleinBottle {
 					dy_dv = -term * sinU * sinV * scale;
 					dz_dv = term * cosV * scale;
 				} else {
-					// Use derivatives corresponding to the restored aperture shape
 					dx_du = (-6 * sinU * (1 + sinU) + 6 * cosU * cosU - dTermDu * cosV) * scale;
 					dy_du = 16 * cosU * scale;
 					dz_du = dTermDu * sinV * scale;
@@ -345,7 +331,6 @@ class KleinBottle {
 	
 				const du = vec3.fromValues(dx_du, dy_du, dz_du);
 				const dvVec = vec3.fromValues(dx_dv, dy_dv, dz_dv);
-				// Revert cross product order to original
 				const normal = vec3.cross(vec3.create(), du, dvVec);
 				vec3.normalize(normal, normal);
 				normals.push(...normal);
@@ -360,8 +345,8 @@ class KleinBottle {
 		const uMax = 2 * Math.PI;
 		const vMin = 0;
 		const vMax = 2 * Math.PI;
-		const r = 1; // Original r
-		const scale = 0.8; // Original scale
+		const r = 1; 
+		const scale = 0.8;
 
 		for (let i = 0; i <= this.segmentsU; i++) {
 			const u = uMin + ((uMax - uMin) * i) / this.segmentsU;
@@ -381,7 +366,6 @@ class KleinBottle {
 					y = 16 * sinU + term * sinU * cosV * scale;
 					z = term * sinV * scale;
 				} else {
-					// Restore original x and y for aperture, keep z continuous
 					x = 6 * cosU * (1 + sinU) - term * cosV * scale;
 					y = 16 * sinU;
 					z = term * sinV * scale;
@@ -402,7 +386,6 @@ class KleinBottle {
 				const idx3 = i * (this.segmentsV + 1) + (j + 1);
 				const idx4 = (i + 1) * (this.segmentsV + 1) + (j + 1);
 	
-				// Убрано условие пропуска граней
 				faces.push([idx1, idx2, idx3]);
 				faces.push([idx3, idx2, idx4]);
 			}
