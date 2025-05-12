@@ -9,7 +9,7 @@ import {BuildMode, BuildPaths} from './config/build/types/config'
 const __filename = url.fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const labName = process.env.VITE_LAB || 'lab5'
+const labName = process.env.VITE_LAB || 'lab6'
 const taskName = process.env.VITE_TASK || 'task1'
 
 export default (configEnv: ConfigEnv) => {
