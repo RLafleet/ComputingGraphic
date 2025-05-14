@@ -3,6 +3,7 @@ import { BaseTank } from './BaseTank';
 import { TankType, ENEMY_SPEED_LIGHT, ENEMY_SPEED_MEDIUM, ENEMY_SPEED_HEAVY,
     ENEMY_HEALTH_LIGHT, ENEMY_HEALTH_MEDIUM, ENEMY_HEALTH_HEAVY,
     SHOOT_COOLDOWN_LIGHT, SHOOT_COOLDOWN_MEDIUM, SHOOT_COOLDOWN_HEAVY } from './TankTypes';
+import { BulletFireData } from './TankInterfaces';
 
 export abstract class EnemyTank extends BaseTank {
     protected moveTimer: number = 0;
@@ -16,8 +17,9 @@ export abstract class EnemyTank extends BaseTank {
         this.shootTimer = Math.random() * this.shootInterval;
     }
     
-    public update(deltaTime: number): THREE.Mesh | null {
-        let shotBullet: THREE.Mesh | null = null;
+    // не логично THREE.Mesh
+    public update(deltaTime: number): BulletFireData | null {
+        let shotBulletData: BulletFireData | null = null;
         this.moveTimer += deltaTime * 1000;
         this.shootTimer += deltaTime * 1000;
         if (this.moveTimer > this.moveInterval) {
@@ -26,12 +28,13 @@ export abstract class EnemyTank extends BaseTank {
         }
         if (this.shootTimer > this.shootInterval) {
             this.shootTimer = 0;
-            shotBullet = this.attemptShoot();
+            shotBulletData = this.attemptShoot();
         }
-        return shotBullet;
+        return shotBulletData;
     }
     
-    protected chooseRandomDirection(): void {
+    // private вместо protected
+    private chooseRandomDirection(): void {
         const randomValue = Math.random();
         if (randomValue < 0.25) {
             this.moveForward();
@@ -43,7 +46,7 @@ export abstract class EnemyTank extends BaseTank {
             this.rotateRight();
         }
     }
-    protected attemptShoot(): THREE.Mesh | null {
+    private attemptShoot(): BulletFireData | null {
         return this.shoot();
     }
 }

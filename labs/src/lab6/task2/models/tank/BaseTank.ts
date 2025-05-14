@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { TankType, TANK_HEIGHT, PLAYER_SPEED, TANK_ROTATION_SPEED, PLAYER_HEALTH, 
     SHOOT_COOLDOWN_PLAYER, BULLET_SPEED } from './TankTypes';
-import { TankModel } from './TankModel';
-import { TankVisuals } from './TankVisuals';
+import { BulletFireData, TankState, TankStateUpdateListener } from './TankInterfaces';
 
 export class BaseTank {
-    protected model: TankModel;
+    private logicalPosition: THREE.Vector3;
+    private logicalRotationY: number;
+    public logicalTurretRotationY: number = 0;
+
     protected speed: number = PLAYER_SPEED;
     protected rotationSpeed: number = TANK_ROTATION_SPEED;
     protected health: number = PLAYER_HEALTH;
@@ -15,34 +17,60 @@ export class BaseTank {
     protected shootCooldown: number = SHOOT_COOLDOWN_PLAYER;
     protected isMoving: boolean = false;
 
+    private onStateUpdate: TankStateUpdateListener | null = null;
+
     constructor(type: TankType, position: THREE.Vector3) {
         this.type = type;
-        this.model = new TankModel(type, position);
-        this.model.mesh.position.y = TANK_HEIGHT;
+        this.logicalPosition = position.clone();
+        this.logicalPosition.y = TANK_HEIGHT; 
+        this.logicalRotationY = 0; 
+        this.logicalTurretRotationY = 0;
+        this.updateDirection(); 
+    }
+
+    public setOnStateUpdateListener(listener: TankStateUpdateListener): void {
+        this.onStateUpdate = listener;
+    }
+
+    private notifyStateUpdate(): void {
+        if (this.onStateUpdate) {
+            this.onStateUpdate({
+                position: this.logicalPosition.clone(),
+                rotationY: this.logicalRotationY,
+                turretRotationY: this.logicalTurretRotationY,
+                tankType: this.type
+            });
+        }
     }
 
     public moveForward(): void {
-        this.model.mesh.translateZ(this.speed);
+        const moveX = Math.sin(this.logicalRotationY) * this.speed;
+        const moveZ = Math.cos(this.logicalRotationY) * this.speed;
+        this.logicalPosition.x += moveX;
+        this.logicalPosition.z += moveZ;
         this.isMoving = true;
-        this.model.mesh.position.y = TANK_HEIGHT;
-        this.updateDirection();
+        this.notifyStateUpdate();
     }
 
     public moveBackward(): void {
-        this.model.mesh.translateZ(-this.speed);
+        const moveX = Math.sin(this.logicalRotationY) * this.speed;
+        const moveZ = Math.cos(this.logicalRotationY) * this.speed;
+        this.logicalPosition.x -= moveX;
+        this.logicalPosition.z -= moveZ;
         this.isMoving = true;
-        this.model.mesh.position.y = TANK_HEIGHT;
-        this.updateDirection();
+        this.notifyStateUpdate();
     }
 
     public rotateLeft(): void {
-        this.model.mesh.rotateY(this.rotationSpeed);
+        this.logicalRotationY += this.rotationSpeed;
         this.updateDirection();
+        this.notifyStateUpdate();
     }
 
     public rotateRight(): void {
-        this.model.mesh.rotateY(-this.rotationSpeed);
+        this.logicalRotationY -= this.rotationSpeed;
         this.updateDirection();
+        this.notifyStateUpdate();
     }
 
     public stopMoving(): void {
@@ -51,60 +79,69 @@ export class BaseTank {
 
     public updateDirection(): void {
         this.direction.set(
-            Math.sin(this.model.mesh.rotation.y),
+            Math.sin(this.logicalRotationY),
             0,
-            Math.cos(this.model.mesh.rotation.y)
+            Math.cos(this.logicalRotationY)
         );
     }
 
     public move(direction: THREE.Vector3): void {
-        if (direction.length() > 0) {
-            direction.normalize();
-            const newDirection = direction.clone();
-            const moveAmount = new THREE.Vector3()
-                .copy(newDirection)
-                .multiplyScalar(this.speed);
-            this.model.mesh.position.add(moveAmount);
-            const targetRotation = Math.atan2(newDirection.x, newDirection.z);
-            const currentRotation = this.model.mesh.rotation.y;
-            const rotationDelta = Math.atan2(Math.sin(targetRotation - currentRotation), Math.cos(targetRotation - currentRotation));
-            if (Math.abs(rotationDelta) > 0.05) {
-                this.model.mesh.rotation.y += rotationDelta * 0.1;
-                this.updateDirection();
+        if (direction.lengthSq() > 0) { 
+            const normalizedDirection = direction.clone().normalize();
+            const moveAmount = normalizedDirection.clone().multiplyScalar(this.speed);
+            this.logicalPosition.add(moveAmount);
+            this.logicalPosition.y = TANK_HEIGHT; 
+            const targetRotation = Math.atan2(normalizedDirection.x, normalizedDirection.z);
+            const currentRotation = this.logicalRotationY;
+            let rotationDelta = targetRotation - currentRotation;
+            while (rotationDelta > Math.PI) rotationDelta -= 2 * Math.PI;
+            while (rotationDelta < -Math.PI) rotationDelta += 2 * Math.PI;
+            const rotationLerpFactor = 0.1; 
+            if (Math.abs(rotationDelta) > 0.01) { 
+                this.logicalRotationY += rotationDelta * rotationLerpFactor;
+                this.logicalRotationY = Math.atan2(Math.sin(this.logicalRotationY), Math.cos(this.logicalRotationY));
             }
+            this.updateDirection();
             this.isMoving = true;
+            this.notifyStateUpdate();
         } else {
-            this.isMoving = false;
+            if (this.isMoving) {
+                this.isMoving = false;
+            }
         }
     }
 
-    public shoot(): THREE.Mesh | null {
+    public shoot(): BulletFireData | null {
         const currentTime = Date.now();
         if (currentTime - this.lastShootTime < this.shootCooldown) {
             return null;
         }
         this.lastShootTime = currentTime;
-        const bulletGeometry = new THREE.SphereGeometry(0.15, 12, 12);
-        const bulletMaterial = new THREE.MeshPhongMaterial({ 
-            color: this.type === TankType.PLAYER ? 0xffff00 : 0xff0000,
-            emissive: this.type === TankType.PLAYER ? 0xffff00 : 0xff0000,
-            emissiveIntensity: 0.7
-        });
-        const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
-        const bulletDirection = new THREE.Vector3(0, 0, 1).applyQuaternion(this.model.turretPivot.quaternion);
-        const tankWorldPosition = new THREE.Vector3();
-        this.model.mesh.getWorldPosition(tankWorldPosition);
-        bulletDirection.applyQuaternion(this.model.mesh.quaternion);
-        bullet.position.copy(tankWorldPosition).add(
-            new THREE.Vector3(0, 0.7, 0)
-        ).add(bulletDirection);
-        TankVisuals.createMuzzleFlash(bulletDirection, tankWorldPosition, this.model.mesh.parent!);
-        bullet.userData = {
-            direction: bulletDirection.normalize(),
+
+        const tankWorldPosition = this.logicalPosition.clone();
+
+        const bodyQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.logicalRotationY);
+        const turretLocalQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.logicalTurretRotationY);
+        const worldTurretQuaternion = new THREE.Quaternion().multiplyQuaternions(bodyQuaternion, turretLocalQuaternion);
+
+        const bulletLocalDirection = new THREE.Vector3(0, 0, 1); 
+        const bulletWorldDirection = bulletLocalDirection.clone().applyQuaternion(worldTurretQuaternion).normalize();
+
+        const turretOffset = 0.7;
+        const barrelLength = 1.0;
+        
+        const muzzleOffsetFromTurretPivot = new THREE.Vector3(0, 0, barrelLength);
+        const worldMuzzlePosition = muzzleOffsetFromTurretPivot.clone().applyQuaternion(worldTurretQuaternion).add(tankWorldPosition);
+        worldMuzzlePosition.y = this.logicalPosition.y + turretOffset;
+
+        return {
+            initialPosition: worldMuzzlePosition,
+            direction: bulletWorldDirection,
             speed: BULLET_SPEED,
-            owner: this.type
+            ownerType: this.type,
+            muzzleWorldPosition: worldMuzzlePosition.clone(),
+            muzzleWorldDirection: bulletWorldDirection.clone()
         };
-        return bullet;
     }
 
     public takeDamage(amount: number): void {
@@ -115,16 +152,38 @@ export class BaseTank {
         return this.health <= 0;
     }
 
-    public getMesh(): THREE.Object3D {
-        return this.model.mesh;
+    public getPosition(): THREE.Vector3 {
+        return this.logicalPosition.clone();
     }
 
-    public getPosition(): THREE.Vector3 {
-        return this.model.mesh.position;
+    public setPosition(newPosition: THREE.Vector3): void {
+        this.logicalPosition.copy(newPosition);
+        this.logicalPosition.y = TANK_HEIGHT; 
+        this.notifyStateUpdate();
+    }
+
+    public getRotationY(): number {
+        return this.logicalRotationY;
+    }
+
+    public setRotationY(newRotationY: number): void {
+        this.logicalRotationY = newRotationY;
+        this.updateDirection();
+        this.notifyStateUpdate();
+    }
+    
+    public getTurretRotationY(): number {
+        return this.logicalTurretRotationY;
+    }
+
+    public setTurretRotationY(newTurretRotationY: number): void {
+        this.logicalTurretRotationY = newTurretRotationY;
+        this.logicalTurretRotationY = Math.atan2(Math.sin(this.logicalTurretRotationY), Math.cos(this.logicalTurretRotationY));
+        this.notifyStateUpdate();
     }
 
     public getDirection(): THREE.Vector3 {
-        return this.direction;
+        return this.direction.clone();
     }
 
     public getType(): TankType {
@@ -138,17 +197,25 @@ export class BaseTank {
     protected constrainToGameField(fieldSize: number): void {
         const halfSize = fieldSize / 2;
         const margin = 1;
-        if (this.model.mesh.position.x > halfSize - margin) {
-            this.model.mesh.position.x = halfSize - margin;
+        let changed = false;
+        if (this.logicalPosition.x > halfSize - margin) {
+            this.logicalPosition.x = halfSize - margin;
+            changed = true;
         }
-        if (this.model.mesh.position.x < -halfSize + margin) {
-            this.model.mesh.position.x = -halfSize + margin;
+        if (this.logicalPosition.x < -halfSize + margin) {
+            this.logicalPosition.x = -halfSize + margin;
+            changed = true;
         }
-        if (this.model.mesh.position.z > halfSize - margin) {
-            this.model.mesh.position.z = halfSize - margin;
+        if (this.logicalPosition.z > halfSize - margin) {
+            this.logicalPosition.z = halfSize - margin;
+            changed = true;
         }
-        if (this.model.mesh.position.z < -halfSize + margin) {
-            this.model.mesh.position.z = -halfSize + margin;
+        if (this.logicalPosition.z < -halfSize + margin) {
+            this.logicalPosition.z = -halfSize + margin;
+            changed = true;
+        }
+        if (changed) {
+            this.notifyStateUpdate();
         }
     }
     

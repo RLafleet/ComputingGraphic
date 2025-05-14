@@ -14,6 +14,17 @@ export class TankModel {
         this.buildTankModel(type);
     }
 
+    public updateTransform(position: THREE.Vector3, bodyRotationY: number): void {
+        this.mesh.position.copy(position);
+        this.mesh.rotation.y = bodyRotationY;
+    }
+
+    public updateTurretRotation(turretRotationY: number): void {
+        if (this.turretPivot) {
+            this.turretPivot.rotation.y = turretRotationY;
+        }
+    }
+
     private buildTankModel(type: TankType): void {
         const carWidth = 2;      
         const carHeight = 0.8;   

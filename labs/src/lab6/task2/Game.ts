@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { Tank, TankType, PlayerTank, EnemyTank, LightEnemyTank, MediumEnemyTank, HeavyEnemyTank } from './models/Tank';
+import { Tank, TankType, PlayerTank, EnemyTank, LightEnemyTank, MediumEnemyTank, HeavyEnemyTank, BaseTank } from './models/Tank';
+import { TankModel } from './models/tank/TankModel';
 import { Level, LevelLayout } from './models/Level';
 import { BlockType, createBlock } from './models/terrain/Block';
 import { UI } from './UI';
@@ -8,18 +9,25 @@ import { EffectsManager } from './managers/EffectsManager';
 import { InputHandler } from './input/InputHandler';
 import { LevelGenerator } from './level/LevelGenerator';
 import { PowerUpManager } from './managers/PowerUpManager';
+import { TankVisuals } from './models/tank/TankVisuals';
 import { 
     MAX_ENEMY_TANKS, TOTAL_ENEMY_TANKS, PLAYER_LIVES, TANK_SPAWN_RATE, 
     ENEMY_ROTATION_RATE, 
     SCORE_TANK_DESTROYED, TANK_COLLISION_RADIUS, 
     PLAYER_FIRE_DELAY, MACHINE_GUN_FIRE_DELAY, HELMET_DURATION
 } from './constants/GameConstants';
+import { BulletFireData, TankState } from './models/tank/TankInterfaces';
 
 export class Game {
     private scene: THREE.Scene;
     private camera: THREE.PerspectiveCamera;
-    private playerTank!: PlayerTank;
-    private enemyTanks: Tank[] = [];
+    
+    private playerTankLogic!: PlayerTank;
+    private playerTankVisual!: TankModel;
+
+    private enemyTanksLogic: EnemyTank[] = [];
+    private enemyTanksVisuals: Map<EnemyTank, TankModel> = new Map();
+
     private bullets: THREE.Mesh[] = [];
     private level!: Level;
     private maxEnemyTanks: number = MAX_ENEMY_TANKS;
@@ -68,8 +76,8 @@ export class Game {
         const offsetZ = -(height / 2) + 0.5;
         const spawnPosition = this.findSafeSpawnPosition(width, height, offsetX, offsetZ);
         console.log(`Танк игрока создан на позиции: ${spawnPosition.x}, ${spawnPosition.z}`);
-        this.playerTank = new PlayerTank(spawnPosition);
-        this.scene.add(this.playerTank.getMesh());
+        this.playerTankLogic = new PlayerTank(spawnPosition);
+        this.playerTankVisual = this.setupTank(this.playerTankLogic, spawnPosition);
         this.updateCamera();
         this.spawnInitialEnemies();
         this.lastUpdateTime = Date.now();
@@ -82,7 +90,7 @@ export class Game {
         }
     }
     private spawnEnemyTank(): boolean {
-        if (this.enemyTanks.length >= this.maxEnemyTanks || this.remainingEnemyTanks <= 0) {
+        if (this.enemyTanksLogic.length >= this.maxEnemyTanks || this.remainingEnemyTanks <= 0) {
             return false;
         }
         
@@ -117,26 +125,27 @@ export class Game {
         const spawnPosition = possibleSpawnPoints[Math.floor(Math.random() * possibleSpawnPoints.length)];
         if (!spawnPosition) return false;
         console.log(`Generating enemy at position: x=${spawnPosition.x.toFixed(2)}, z=${spawnPosition.z.toFixed(2)}`);
-        for (const enemy of this.enemyTanks) {
-            if (spawnPosition.distanceTo(enemy.getPosition()) < TANK_COLLISION_RADIUS * 2) {
+        for (const enemyLogic of this.enemyTanksLogic) {
+            if (spawnPosition.distanceTo(enemyLogic.getPosition()) < TANK_COLLISION_RADIUS * 2) {
                 console.log("Position too close to another tank, skipping spawn");
                 return false;
             }
         }
-        if (this.playerTank && spawnPosition.distanceTo(this.playerTank.getPosition()) < TANK_COLLISION_RADIUS * 6) {
+        if (this.playerTankLogic && spawnPosition.distanceTo(this.playerTankLogic.getPosition()) < TANK_COLLISION_RADIUS * 6) {
             return false;
         }
-        let enemyTank: EnemyTank; 
+        let newEnemyLogic: EnemyTank; 
         const tankTypeVal = Math.random();
         if (tankTypeVal < 0.5) {
-            enemyTank = new LightEnemyTank(spawnPosition);
+            newEnemyLogic = new LightEnemyTank(spawnPosition);
         } else if (tankTypeVal < 0.8) {
-            enemyTank = new MediumEnemyTank(spawnPosition);
+            newEnemyLogic = new MediumEnemyTank(spawnPosition);
         } else {
-            enemyTank = new HeavyEnemyTank(spawnPosition);
+            newEnemyLogic = new HeavyEnemyTank(spawnPosition);
         }
-        this.scene.add(enemyTank.getMesh());
-        this.enemyTanks.push(enemyTank);
+        const newEnemyVisual = this.setupTank(newEnemyLogic, spawnPosition);
+        this.enemyTanksLogic.push(newEnemyLogic);
+        this.enemyTanksVisuals.set(newEnemyLogic, newEnemyVisual);
         return true;
     }
 
@@ -145,18 +154,18 @@ export class Game {
         const currentTime = Date.now();
         const deltaTime = (currentTime - this.lastUpdateTime) / 1000; 
         this.lastUpdateTime = currentTime;
-        if (this.playerTank) {
-            this.powerUpManager.update(this.playerTank, currentTime);
+        if (this.playerTankLogic) {
+            this.powerUpManager.update(this.playerTankLogic, currentTime);
         }
-        if (this.playerTank instanceof PlayerTank) {
-            (this.playerTank as PlayerTank).update(deltaTime);
+        if (this.playerTankLogic instanceof PlayerTank) {
+            (this.playerTankLogic as PlayerTank).update(deltaTime);
         }
         this.processPlayerMovement();
         if (!this.powerUpManager.areEnemiesFrozen) {
             this.updateEnemyTanks(deltaTime);
         }
         this.updateBullets();
-        if (Math.random() < TANK_SPAWN_RATE && this.enemyTanks.length < this.maxEnemyTanks) {
+        if (Math.random() < TANK_SPAWN_RATE && this.enemyTanksLogic.length < this.maxEnemyTanks) {
             this.spawnEnemyTank();
         }
         this.updateCamera();
@@ -164,29 +173,30 @@ export class Game {
     }
 
     private processPlayerMovement(): void {
-        if (this.gameOver || !this.playerTank) return; 
+        if (this.gameOver || !this.playerTankLogic) return; 
         const currentKeys = this.inputHandler.getKeys();
-        const oldPosition = this.playerTank.getPosition().clone();
+        const oldPosition = this.playerTankLogic.getPosition().clone();
         let moved = false; 
         if (currentKeys['w'] === true || currentKeys['ArrowUp'] === true) {
-            this.playerTank.moveForward(); moved = true;
+            this.playerTankLogic.moveForward(); moved = true;
         }
         if (currentKeys['s'] === true || currentKeys['ArrowDown'] === true) {
-            this.playerTank.moveBackward(); moved = true;
+            this.playerTankLogic.moveBackward(); moved = true;
         }
         if (currentKeys['a'] === true || currentKeys['ArrowLeft'] === true) {
-            this.playerTank.rotateLeft(); 
+            this.playerTankLogic.rotateLeft(); 
         }
         if (currentKeys['d'] === true || currentKeys['ArrowRight'] === true) {
-            this.playerTank.rotateRight();
+            this.playerTankLogic.rotateRight();
         }
-        if (moved && this.playerTank && this.collisionManager.checkTankBlockCollision(this.playerTank, this.level)) {
-            this.playerTank.getMesh().position.copy(oldPosition);
+
+        if (moved && this.playerTankLogic && this.collisionManager.checkTankBlockCollision(this.playerTankLogic, this.level)) {
+            this.playerTankLogic.setPosition(oldPosition);
         }
-        if (this.playerTank) {
-            for (const enemy of this.enemyTanks) {
-                if (enemy && this.collisionManager.checkSingleTankToTankCollision(this.playerTank, enemy)) {
-                    this.playerTank.getMesh().position.copy(oldPosition); 
+        if (this.playerTankLogic) {
+            for (const enemyLogic of this.enemyTanksLogic) {
+                if (enemyLogic && this.collisionManager.checkSingleTankToTankCollision(this.playerTankLogic, enemyLogic)) {
+                    this.playerTankLogic.setPosition(oldPosition); 
                     break; 
                 }
             }
@@ -196,82 +206,107 @@ export class Game {
     }
 
     public playerShoot(): void {
-        if (this.gameOver || !this.playerTank) return;
+        if (this.gameOver || !this.playerTankLogic) return;
         const currentTime = Date.now();
         const fireDelay = this.powerUpManager.isMachineGunActive ? MACHINE_GUN_FIRE_DELAY : PLAYER_FIRE_DELAY;
         if (currentTime - this.lastFireTime < fireDelay) {
             return;
         }
-        const bullet = this.playerTank.shoot();
-        if (bullet) {
-            bullet.userData['isPlayerBullet'] = true;
-            bullet.userData['owner'] = TankType.PLAYER;
-            this.scene.add(bullet);
-            this.bullets.push(bullet);
+        const bulletData = this.playerTankLogic.shoot();
+        if (bulletData) {
+            this.handleBulletFired(bulletData);
             this.lastFireTime = currentTime;
         }
     }
 
-    private updateEnemyTanks(deltaTime: number): void {
-        if (this.enemyTanks.length === 0 || this.powerUpManager.areEnemiesFrozen) return;
+    private handleBulletFired(bulletData: BulletFireData): void {
+        const bulletGeometry = new THREE.SphereGeometry(0.15, 12, 12);
+        const bulletMaterial = new THREE.MeshPhongMaterial({
+            color: bulletData.ownerType === TankType.PLAYER ? 0xffff00 : 0xff0000,
+            emissive: bulletData.ownerType === TankType.PLAYER ? 0xffff00 : 0xff0000,
+            emissiveIntensity: 0.7
+        });
+        const bulletMesh = new THREE.Mesh(bulletGeometry, bulletMaterial);
 
-        for (let i = this.enemyTanks.length - 1; i >= 0; i--) {
-            const tank = this.enemyTanks[i];
-            if (!tank || tank.isDestroyed()) { 
-                if (tank && tank.isDestroyed()){
-                    this.scene.remove(tank.getMesh());
-                    this.enemyTanks.splice(i,1);
+        bulletMesh.position.copy(bulletData.initialPosition);
+        bulletMesh.userData = {
+            direction: bulletData.direction,
+            speed: bulletData.speed,
+            owner: bulletData.ownerType, 
+            isPlayerBullet: bulletData.ownerType === TankType.PLAYER
+        };
+
+        this.scene.add(bulletMesh);
+        this.bullets.push(bulletMesh);
+
+        TankVisuals.createMuzzleFlash(bulletData.muzzleWorldPosition, bulletData.muzzleWorldDirection, this.scene);
+    }
+
+    private updateEnemyTanks(deltaTime: number): void {
+        if (this.enemyTanksLogic.length === 0 || this.powerUpManager.areEnemiesFrozen) return;
+
+        for (let i = this.enemyTanksLogic.length - 1; i >= 0; i--) {
+            const tankLogic = this.enemyTanksLogic[i];
+            const tankVisual = this.enemyTanksVisuals.get(tankLogic);
+
+            if (!tankLogic || !tankVisual || tankLogic.isDestroyed()) { 
+                if (tankLogic && tankLogic.isDestroyed()){
+                    if(tankVisual) this.scene.remove(tankVisual.mesh);
+                    this.enemyTanksLogic.splice(i,1);
+                    this.enemyTanksVisuals.delete(tankLogic);
                 }
                 continue;
             }
             
-            const oldPosition = tank.getPosition().clone();
-            let shotBullet: THREE.Mesh | null = null;
+            const oldPosition = tankLogic.getPosition().clone();
+            let shotBulletData: BulletFireData | null = null;
 
-            if (tank instanceof EnemyTank) {
-                shotBullet = (tank as EnemyTank).update(deltaTime); // Capture bullet
+            if (tankLogic instanceof EnemyTank) {
+                shotBulletData = tankLogic.update(deltaTime); 
             }
 
-            if (shotBullet) {
-                if (shotBullet.userData) {
-                    shotBullet.userData['isPlayerBullet'] = false; 
-                } else {
-                    shotBullet.userData = { isPlayerBullet: false }; 
-                }
-                this.scene.add(shotBullet);
-                this.bullets.push(shotBullet);
+            if (shotBulletData) {
+                this.handleBulletFired(shotBulletData);
             }
             
-            const playerPos = this.playerTank ? this.playerTank.getPosition() : null;
+            const playerPos = this.playerTankLogic ? this.playerTankLogic.getPosition() : null;
             if (playerPos) {
                 const toPlayer = new THREE.Vector3().subVectors(playerPos, oldPosition);
                 const distanceToPlayer = toPlayer.length();
-                const angleToPlayer = Math.atan2(toPlayer.x, toPlayer.z);
+                const angleToPlayerBody = Math.atan2(toPlayer.x, toPlayer.z);
+                
+                const worldAngleToPlayerForTurret = Math.atan2(toPlayer.x, toPlayer.z);
+                let localTurretAngle = worldAngleToPlayerForTurret - tankLogic.getRotationY();
+                while (localTurretAngle > Math.PI) localTurretAngle -= 2 * Math.PI;
+                while (localTurretAngle < -Math.PI) localTurretAngle += 2 * Math.PI;
+                tankLogic.setTurretRotationY(localTurretAngle);
+
                 if (Math.random() < ENEMY_ROTATION_RATE) { 
-                    tank.getMesh().rotation.y = angleToPlayer;
-                    tank.updateDirection();
+                    tankLogic.setRotationY(angleToPlayerBody);
                 }
-                if (distanceToPlayer > 15 && Math.random() < 0.8) tank.moveForward();
-                else if (distanceToPlayer < 5 && Math.random() < 0.3) tank.moveBackward();
-                else if (Math.random() < 0.6) tank.moveForward();
+                if (distanceToPlayer > 15 && Math.random() < 0.8) tankLogic.moveForward();
+                else if (distanceToPlayer < 5 && Math.random() < 0.3) tankLogic.moveBackward();
+                else if (Math.random() < 0.6) tankLogic.moveForward();
             } else { 
-                 if (Math.random() < 0.1) tank.rotateLeft();
-                 else if (Math.random() < 0.1) tank.rotateRight();
-                 else if (Math.random() < 0.5) tank.moveForward();
+                 if (Math.random() < 0.1) tankLogic.rotateLeft();
+                 else if (Math.random() < 0.1) tankLogic.rotateRight();
+                 else if (Math.random() < 0.5) tankLogic.moveForward();
             }
             let collisionReverted = false;
-            if (this.collisionManager.checkTankBlockCollision(tank, this.level)) {
-                tank.getMesh().position.copy(oldPosition);
+            if (this.collisionManager.checkTankBlockCollision(tankLogic, this.level)) {
+                tankLogic.setPosition(oldPosition);
                 collisionReverted = true;
             }
-            if (!collisionReverted && this.collisionManager.checkEnemyTankCollision(tank, this.enemyTanks, i)) {
-                tank.getMesh().position.copy(oldPosition);
+            if (!collisionReverted && this.collisionManager.checkEnemyTankCollision(tankLogic, this.enemyTanksLogic, i)) {
+                tankLogic.setPosition(oldPosition);
                 collisionReverted = true;
             }
-            if (!collisionReverted && this.playerTank && this.collisionManager.checkSingleTankToTankCollision(tank, this.playerTank)) {
-                 tank.getMesh().position.copy(oldPosition);
+            if (!collisionReverted && this.playerTankLogic && this.collisionManager.checkSingleTankToTankCollision(tankLogic, this.playerTankLogic)) {
+                 tankLogic.setPosition(oldPosition);
             }
-            this.constrainEnemyTankToField(tank);
+            if (tankLogic) {
+                this.constrainEnemyTankToField(tankLogic as BaseTank); 
+            }
         }
     }
 
@@ -291,11 +326,11 @@ export class Game {
                 continue; 
             }
             let removedByCollision = false;
-            if (this.playerTank) { 
+            if (this.playerTankLogic) { 
                 const collisionResult = this.collisionManager.checkBulletCollisions(
                     bullet,
-                    this.playerTank,
-                    this.enemyTanks, 
+                    this.playerTankLogic,
+                    this.enemyTanksLogic, 
                     this.level,
                     this.scene, 
                     this.powerUpManager.isPlayerInvulnerable
@@ -304,20 +339,22 @@ export class Game {
                     this.scene.remove(bullet); 
                     removedByCollision = true;
                 }
-                if (collisionResult.playerHit.wasHit && this.playerTank) {
+                if (collisionResult.playerHit.wasHit && this.playerTankLogic) {
                     if (this.debug) console.log("Game: Player was hit, new health: ", collisionResult.playerHit.newHealth);
                 }
                 for (const enemyHit of collisionResult.enemiesProcessed) {
-                    const enemyTank = this.enemyTanks.find((et, idx) => idx === enemyHit.indexInSourceArray && et === this.enemyTanks[enemyHit.indexInSourceArray]);
-                    if (enemyTank && enemyHit.wasDestroyed) {
+                    const enemyTankLogic = this.enemyTanksLogic[enemyHit.indexInSourceArray]; 
+                    
+                    if (enemyTankLogic && enemyHit.wasDestroyed) {
                         if (this.debug) {
                             console.log(`Game: Enemy tank ${enemyHit.indexInSourceArray} destroyed. Pos: ${enemyHit.positionIfDestroyed}, Type: ${enemyHit.typeIfDestroyed}`);
                         }
-                        this.scene.remove(enemyTank.getMesh());
-                        const currentEnemyTankIndex = this.enemyTanks.indexOf(enemyTank);
-                        if (currentEnemyTankIndex !== -1) {
-                            this.enemyTanks.splice(currentEnemyTankIndex, 1); 
-                        }
+                        const enemyTankVisual = this.enemyTanksVisuals.get(enemyTankLogic);
+                        if(enemyTankVisual) this.scene.remove(enemyTankVisual.mesh);
+                        
+                        this.enemyTanksLogic.splice(enemyHit.indexInSourceArray, 1); 
+                        this.enemyTanksVisuals.delete(enemyTankLogic);
+                        
                         this.remainingEnemyTanks--;
                         if (enemyHit.positionIfDestroyed) {
                             this.powerUpManager.spawnPowerUp(enemyHit.positionIfDestroyed);
@@ -352,8 +389,8 @@ export class Game {
     }
 
     private updateCamera(): void {
-        if (!this.playerTank) return;
-        const playerPos = this.playerTank.getPosition();
+        if (!this.playerTankLogic) return;
+        const playerPos = this.playerTankLogic.getPosition();
         this.camera.position.set(
             playerPos.x,
             35, 
@@ -363,13 +400,13 @@ export class Game {
     }
 
     private checkGameState(): void {
-        if (!this.playerTank) {
+        if (!this.playerTankLogic) {
             if (!this.gameOver) {
                 console.warn("checkGameState called with no playerTank and game not over.");
             }
             return;
         }
-        if (this.playerTank.isDestroyed()) {
+        if (this.playerTankLogic.isDestroyed()) {
             this.playerLives--;
             this.ui.updateLives(this.playerLives);
             if (this.playerLives <= 0) {
@@ -378,15 +415,15 @@ export class Game {
                 console.log("Game Over - Player destroyed!");
             } else {
                 this.powerUpManager.clearPlayerShield();
-                this.scene.remove(this.playerTank.getMesh());
+                if(this.playerTankVisual) this.scene.remove(this.playerTankVisual.mesh);
                 const { width, height } = this.level.getDimensions();
                 const offsetX = -(width / 2) + 0.5;
                 const offsetZ = -(height / 2) + 0.5;
                 const spawnPosition = this.findSafeSpawnPosition(width, height, offsetX, offsetZ);
                 if (spawnPosition) {
-                    this.playerTank = new PlayerTank(spawnPosition);
-                    this.scene.add(this.playerTank.getMesh());
-                    this.powerUpManager.activatePlayerInvulnerability(HELMET_DURATION, this.playerTank);
+                    this.playerTankLogic = new PlayerTank(spawnPosition);
+                    this.playerTankVisual = this.setupTank(this.playerTankLogic, spawnPosition);
+                    this.powerUpManager.activatePlayerInvulnerability(HELMET_DURATION, this.playerTankLogic);
                     console.log("Player respawned with invulnerability!");
                 } else {
                     console.error("Failed to respawn player: no safe spawn position found.");
@@ -395,7 +432,7 @@ export class Game {
                 }
             }
         }
-        if (this.remainingEnemyTanks <= 0 && this.enemyTanks.length === 0) {
+        if (this.remainingEnemyTanks <= 0 && this.enemyTanksLogic.length === 0) {
             this.gameOver = true;
             this.ui.showGameOver(true);
             console.log("Game Over - Player wins!");
@@ -403,8 +440,9 @@ export class Game {
     }
 
     private constrainTankToField(): void {
-        if (!this.playerTank) return;
-        const position = this.playerTank.getMesh().position;
+        if (!this.playerTankLogic) return;
+        const currentPosition = this.playerTankLogic.getPosition();
+        let constrainedPosition = currentPosition.clone();
         const { width, height } = this.level.getDimensions();
         const offsetX = -(width / 2) + 0.5;
         const offsetZ = -(height / 2) + 0.5;
@@ -412,26 +450,36 @@ export class Game {
         const maxX = offsetX + width - 2; 
         const minZ = offsetZ + 1;
         const maxZ = offsetZ + height - 2;
-        if (position.x > maxX) {
-            position.x = maxX;
-            console.log(`X ограничение (правая стена): ${position.x.toFixed(2)}`);
+
+        let changed = false;
+        if (constrainedPosition.x > maxX) {
+            constrainedPosition.x = maxX;
+            changed = true;
+            console.log(`X ограничение (правая стена): ${constrainedPosition.x.toFixed(2)}`);
         }
-        if (position.x < minX) {
-            position.x = minX;
-            console.log(`X ограничение (левая стена): ${position.x.toFixed(2)}`);
+        if (constrainedPosition.x < minX) {
+            constrainedPosition.x = minX;
+            changed = true;
+            console.log(`X ограничение (левая стена): ${constrainedPosition.x.toFixed(2)}`);
         }
-        if (position.z > maxZ) {
-            position.z = maxZ;
-            console.log(`Z ограничение (дальняя стена): ${position.z.toFixed(2)}`);
+        if (constrainedPosition.z > maxZ) {
+            constrainedPosition.z = maxZ;
+            changed = true;
+            console.log(`Z ограничение (дальняя стена): ${constrainedPosition.z.toFixed(2)}`);
         }
-        if (position.z < minZ) {
-            position.z = minZ;
-            console.log(`Z ограничение (ближняя стена): ${position.z.toFixed(2)}`);
+        if (constrainedPosition.z < minZ) {
+            constrainedPosition.z = minZ;
+            changed = true;
+            console.log(`Z ограничение (ближняя стена): ${constrainedPosition.z.toFixed(2)}`);
+        }
+        if(changed) {
+            this.playerTankLogic.setPosition(constrainedPosition);
         }
     }
 
-    private constrainEnemyTankToField(tank: Tank): void {
-        const position = tank.getMesh().position;
+    private constrainEnemyTankToField(tank: BaseTank): void {
+        const currentPosition = tank.getPosition();
+        let constrainedPosition = currentPosition.clone();
         const { width, height } = this.level.getDimensions();
         const offsetX = -(width / 2) + 0.5;
         const offsetZ = -(height / 2) + 0.5;
@@ -439,10 +487,16 @@ export class Game {
         const maxX = offsetX + width - 2; 
         const minZ = offsetZ + 1;
         const maxZ = offsetZ + height - 2;
-        if (position.x > maxX) position.x = maxX;
-        if (position.x < minX) position.x = minX;
-        if (position.z > maxZ) position.z = maxZ;
-        if (position.z < minZ) position.z = minZ;
+
+        let changed = false;
+        if (constrainedPosition.x > maxX) { constrainedPosition.x = maxX; changed = true; }
+        if (constrainedPosition.x < minX) { constrainedPosition.x = minX; changed = true; }
+        if (constrainedPosition.z > maxZ) { constrainedPosition.z = maxZ; changed = true; }
+        if (constrainedPosition.z < minZ) { constrainedPosition.z = minZ; changed = true; }
+
+        if(changed) {
+            tank.setPosition(constrainedPosition);
+        }
     }
 
     private findSafeSpawnPosition(width: number, height: number, offsetX: number, offsetZ: number): THREE.Vector3 {
@@ -463,14 +517,16 @@ export class Game {
     }
 
     public destroyAllEnemies(): void {
-        const enemyCount = this.enemyTanks.length;
-        for (const tank of this.enemyTanks) {
-            if (tank) {
-                this.scene.remove(tank.getMesh());
-                this.effectsManager.createExplosionEffect(tank.getPosition()); 
+        const enemyCount = this.enemyTanksLogic.length;
+        for (const tankLogic of this.enemyTanksLogic) {
+            if (tankLogic) {
+                const tankVisual = this.enemyTanksVisuals.get(tankLogic);
+                if(tankVisual) this.scene.remove(tankVisual.mesh);
+                this.effectsManager.createExplosionEffect(tankLogic.getPosition()); 
             }
         }
-        this.enemyTanks = [];
+        this.enemyTanksLogic = [];
+        this.enemyTanksVisuals.clear();
         this.remainingEnemyTanks = Math.max(0, this.remainingEnemyTanks - enemyCount);
         this.ui.updateTankCount(this.remainingEnemyTanks);
         this.score += enemyCount * SCORE_TANK_DESTROYED;
@@ -519,5 +575,22 @@ export class Game {
                 }
             }
         }
+    }
+
+    private setupTank(tankLogic: BaseTank, initialPosition?: THREE.Vector3, initialRotationY?: number, initialTurretRotationY?: number): TankModel {
+        const pos = initialPosition || tankLogic.getPosition();
+        const rotY = initialRotationY || tankLogic.getRotationY();
+        const turretRotY = initialTurretRotationY || tankLogic.getTurretRotationY();
+
+        const tankVisual = new TankModel(tankLogic.getType(), pos);
+        tankVisual.updateTransform(pos, rotY);
+        tankVisual.updateTurretRotation(turretRotY);
+
+        tankLogic.setOnStateUpdateListener((newState: TankState) => {
+            tankVisual.updateTransform(newState.position, newState.rotationY);
+            tankVisual.updateTurretRotation(newState.turretRotationY);
+        });
+        this.scene.add(tankVisual.mesh);
+        return tankVisual;
     }
 } 

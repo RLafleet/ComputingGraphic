@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { TankType } from './TankTypes';
 import { BaseTank } from './BaseTank';
 import { PLAYER_FIRE_DELAY, MACHINE_GUN_FIRE_DELAY, MACHINE_GUN_DURATION } from '../../constants/GameConstants';
+import { BulletFireData } from './TankInterfaces';
 
 export class PlayerTank extends BaseTank {
     private isMachineGunActive: boolean = false;
@@ -11,7 +12,8 @@ export class PlayerTank extends BaseTank {
         super(TankType.PLAYER, position);
     }
 
-    public override shoot(): THREE.Mesh | null {
+    // не логично THREE.Mesh
+    public override shoot(): BulletFireData | null {
         const currentTime = Date.now();
         const fireDelay = this.isMachineGunActive ? MACHINE_GUN_FIRE_DELAY : PLAYER_FIRE_DELAY;
         if (currentTime - this.lastShootTime < fireDelay) {

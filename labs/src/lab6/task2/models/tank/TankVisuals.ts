@@ -29,15 +29,16 @@ export class TankVisuals {
         return geometry;
     }
 
-    public static createMuzzleFlash(direction: THREE.Vector3, tankPosition: THREE.Vector3, parent: THREE.Object3D): void {
+    public static createMuzzleFlash(
+        muzzleWorldPosition: THREE.Vector3, 
+        muzzleWorldDirection: THREE.Vector3, 
+        parentScene: THREE.Scene
+    ): void {
         const flashGroup = new THREE.Group();
-        const muzzlePosition = tankPosition.clone().add(
-            new THREE.Vector3(0, 0.7, 0)
-        ).add(direction.clone().multiplyScalar(1.2));
-        flashGroup.position.copy(muzzlePosition);
-        flashGroup.lookAt(tankPosition.clone().add(
-            direction.clone().multiplyScalar(10)
-        ));
+        flashGroup.position.copy(muzzleWorldPosition);
+        const lookAtTarget = new THREE.Vector3().addVectors(muzzleWorldPosition, muzzleWorldDirection);
+        flashGroup.lookAt(lookAtTarget);
+
         const coneGeometry = new THREE.ConeGeometry(0.3, 0.8, 8);
         const coneMaterial = new THREE.MeshBasicMaterial({
             color: 0xFFFF00,
@@ -74,7 +75,7 @@ export class TankVisuals {
             );
             flashGroup.add(spark);
         }
-        parent.add(flashGroup);
+        parentScene.add(flashGroup);
         let frame = 0;
         const animateFlash = () => {
             frame++;
