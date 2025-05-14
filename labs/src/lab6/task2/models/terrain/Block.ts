@@ -5,7 +5,6 @@ export enum BlockType {
     BRICK = 'brick',
     STEEL = 'steel',
     WATER = 'water',
-    ICE = 'ice',
     TREES = 'trees',
     HQ = 'hq' 
 }
@@ -46,9 +45,6 @@ export function createBlock(type: BlockType, position: THREE.Vector3): THREE.Mes
             break;
         case BlockType.WATER:
             blockMesh = createWater(blockSize, position);
-            break;
-        case BlockType.ICE:
-            blockMesh = createIce(blockSize, position);
             break;
         case BlockType.TREES:
             blockMesh = createTreesGroup(blockSize, position);
@@ -193,59 +189,6 @@ function createWater(size: number, position: THREE.Vector3): THREE.Mesh {
         requestAnimationFrame(animateWater);
     };
     animateWater();
-    return combinedMesh;
-}
-
-function createIce(size: number, position: THREE.Vector3): THREE.Mesh {
-    const iceGroup = new THREE.Group();
-    const iceGeometry = new THREE.BoxGeometry(size, 0.2, size);
-    const iceMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0xADD8E6, 
-        transparent: true, 
-        opacity: 0.8,
-        roughness: 0.1,
-        metalness: 0.5,
-        envMapIntensity: 1.0
-    });
-    const iceBase = new THREE.Mesh(iceGeometry, iceMaterial);
-    iceBase.position.set(0, 0, 0);
-    iceGroup.add(iceBase);
-    if (!LOW_DETAIL_MODE) {
-        const crystalCount = 6;
-        for (let i = 0; i < crystalCount; i++) {
-            const crystalGeometry = new THREE.ConeGeometry(0.1, 0.2, 4);
-            const crystalMaterial = new THREE.MeshStandardMaterial({
-                color: 0xE0FFFF,
-                transparent: true,
-                opacity: 0.9,
-                metalness: 0.8,
-                roughness: 0.1
-            });
-            const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
-            const offsetX = (Math.random() - 0.5) * size * 0.8;
-            const offsetZ = (Math.random() - 0.5) * size * 0.8;
-            crystal.position.set(offsetX, 0.1, offsetZ);
-            crystal.rotation.y = Math.random() * Math.PI;
-            iceGroup.add(crystal);
-        }
-    }
-    for (let i = 0; i < 5; i++) {
-        const crackGeometry = new THREE.BoxGeometry(0.4 + Math.random() * 0.4, 0.01, 0.02);
-        const crackMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFFFFFF,
-            transparent: true,
-            opacity: 0.5
-        });
-        const crack = new THREE.Mesh(crackGeometry, crackMaterial);
-        crack.position.set((Math.random() - 0.5) * 0.5, 0.11, (Math.random() - 0.5) * 0.5);
-        crack.rotation.y = Math.random() * Math.PI;
-        iceGroup.add(crack);
-    }
-    const combinedGeometry = new THREE.BoxGeometry(size, 0.2, size);
-    const combinedMesh = new THREE.Mesh(combinedGeometry, iceMaterial);
-    combinedMesh.position.copy(position);
-    combinedMesh.position.y = 0.1; 
-    combinedMesh.add(iceGroup);
     return combinedMesh;
 }
 
