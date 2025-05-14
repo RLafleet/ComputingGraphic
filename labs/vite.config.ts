@@ -10,7 +10,7 @@ const __filename = url.fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const labName = process.env.VITE_LAB || 'lab6'
-const taskName = process.env.VITE_TASK || 'task1'
+const taskName = process.env.VITE_TASK || 'task2'
 
 export default (configEnv: ConfigEnv) => {
 	const mode = (configEnv.mode ?? 'development') as BuildMode
