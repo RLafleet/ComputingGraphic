@@ -261,9 +261,12 @@ export class Game {
             const oldPosition = tankLogic.getPosition().clone();
             let shotBulletData: BulletFireData | null = null;
 
+            // использовать полиморфизм
+            // в идеале, миру должно возвращать
             if (tankLogic instanceof EnemyTank) {
                 shotBulletData = tankLogic.update(deltaTime); 
             }
+            // выяснить что значит muzzle
 
             if (shotBulletData) {
                 this.handleBulletFired(shotBulletData);
@@ -316,6 +319,7 @@ export class Game {
         for (let i = this.bullets.length - 1; i >= 0; i--) {
             const bullet = this.bullets[i];
             if (!bullet) continue; 
+            // что означает ?
             const bulletData = bullet.userData as { direction: THREE.Vector3, speed: number, owner: TankType, isPlayerBullet: boolean };
             if (bulletData && bulletData.direction && typeof bulletData.speed === 'number') {
                 const moveAmount = bulletData.direction.clone().multiplyScalar(bulletData.speed);
@@ -522,6 +526,7 @@ export class Game {
             if (tankLogic) {
                 const tankVisual = this.enemyTanksVisuals.get(tankLogic);
                 if(tankVisual) this.scene.remove(tankVisual.mesh);
+                // так не окей
                 this.effectsManager.createExplosionEffect(tankLogic.getPosition()); 
             }
         }

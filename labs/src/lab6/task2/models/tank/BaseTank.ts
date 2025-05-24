@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { TankType, TANK_HEIGHT, PLAYER_SPEED, TANK_ROTATION_SPEED, PLAYER_HEALTH, 
     SHOOT_COOLDOWN_PLAYER, BULLET_SPEED } from './TankTypes';
-import { BulletFireData, TankState, TankStateUpdateListener } from './TankInterfaces';
+import { BulletFireData, TankStateUpdateListener } from './TankInterfaces';
 
 export class BaseTank {
     private logicalPosition: THREE.Vector3;
